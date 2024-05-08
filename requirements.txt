@@ -7,3 +7,4 @@ groq
 matplotlib
 seaborn
 openpyxl
+numpy 
