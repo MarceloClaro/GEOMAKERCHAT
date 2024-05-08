@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 
 from langchain.chains import LLMChain
-from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import SystemMessage, ChatMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
@@ -18,7 +18,6 @@ def upload_and_visualize_data():
     """
     uploaded_files = st.file_uploader("Faça upload dos seus arquivos (JSON, CSV, XLSX até 200MB cada)", 
                                       type=['json', 'csv', 'xlsx'], accept_multiple_files=True, key="file_upload")
-    data_frames = []
     if uploaded_files:
         for file in uploaded_files:
             try:
@@ -26,9 +25,9 @@ def upload_and_visualize_data():
                     data = pd.read_json(file)
                 elif file.type == "text/csv":
                     data = pd.read_csv(file)
-                else:  # XLSX
+                else:
                     data = pd.read_excel(file)
-                data_frames.append(data)
+                st.session_state.setdefault('data_frames', []).append(data)
                 st.write(f"Pré-visualização do arquivo {file.name} carregado:")
                 st.dataframe(data.head())
                 visualize_data(data)
@@ -79,10 +78,12 @@ def main():
         current_prompt = secondary_prompt if 'last_prompt' in st.session_state and st.session_state.last_prompt == primary_prompt else primary_prompt
         st.session_state.last_prompt = current_prompt
 
-        chat_messages = [ChatMessage(role='system', content=current_prompt)] + \
-                        [ChatMessage(role='user', content=msg) for msg in st.session_state.get('chat_history', [])]
+        # Preparing chat messages properly
+        chat_messages = [SystemMessage(content=current_prompt)]
+        chat_messages.extend([ChatMessage(content=msg) for msg in st.session_state.get('chat_history', [])])
+        chat_messages.append(HumanMessagePromptTemplate(template="{human_input}"))
 
-        prompt = ChatPromptTemplate(messages=chat_messages + [HumanMessagePromptTemplate(template="{human_input}")])
+        prompt = ChatPromptTemplate(messages=chat_messages)
 
         groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
         conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
