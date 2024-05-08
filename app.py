@@ -1,76 +1,92 @@
 import streamlit as st
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from langchain.chains import LLMChain
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
-def upload_json_data():
+def upload_data():
     """
-    Permite aos usuários fazer upload de arquivos JSON que podem ser usados como fonte de dados.
-    Os arquivos são carregados através de um widget de upload no Streamlit e lidos como DataFrames.
+    Permite o upload de arquivos JSON e CSV e armazena-os no estado da sessão para acesso posterior.
+    Gera uma pré-visualização dos dados carregados em forma de tabela.
     """
-    uploaded_files = st.file_uploader("Faça upload dos seus arquivos JSON (até 2 arquivos, 200MB cada)", type='json', accept_multiple_files=True, key="json_upload")
+    uploaded_files = st.file_uploader("Faça upload dos seus arquivos (JSON ou CSV, até 300MB cada)", type=['json', 'csv'], accept_multiple_files=True)
+    data_frames = []
     if uploaded_files:
-        data_frames = []
         for file in uploaded_files:
             try:
-                # Lê o arquivo JSON e tenta convertê-lo em DataFrame
-                data = pd.read_json(file)
+                if file.type == "application/json":
+                    data = pd.read_json(file)
+                else:  # CSV
+                    data = pd.read_csv(file)
                 data_frames.append(data)
-                st.write(f"Pré-visualização do arquivo JSON carregado:")
+                st.session_state[file.name] = data  # Armazenar dados na sessão
+                st.write(f"Pré-visualização do arquivo {file.name} carregado:")
                 st.dataframe(data.head())
-            except ValueError as e:
-                # Caso ocorra um erro na leitura do JSON, mostra uma mensagem de erro
-                st.error(f"Erro ao ler o arquivo {file.name}: {e}")
-        st.session_state['uploaded_data'] = data_frames
+            except Exception as e:
+                st.error(f"Erro ao processar o arquivo {file.name}: {e}")
+    return data_frames
+
+def show_data_visualizations(data_frames):
+    """
+    Gera visualizações gráficas para os DataFrames carregados, assumindo que os dados são adequados para plotagem.
+    """
+    for df in data_frames:
+        try:
+            st.write("Visualização dos dados:")
+            st.bar_chart(df.iloc[:, 0:5])  # Mostrar um gráfico de barras dos primeiros 5 campos numéricos
+        except Exception as e:
+            st.error(f"Não foi possível gerar gráficos para os dados: {e}")
+
+def perform_rag(question, data_frames):
+    """
+    Realiza uma busca avançada utilizando TF-IDF e similaridade de cosseno nos DataFrames para responder às perguntas baseadas em dados carregados.
+    """
+    if not data_frames:
+        return "Nenhum dado disponível para responder à pergunta."
+
+    all_text = []
+    for df in data_frames:
+        all_text.extend(df.apply(lambda row: ' '.join(row.astype(str)), axis=1).tolist())
+    
+    tfidf_matrix, vectorizer = vectorize_text(all_text + [question])
+    similarities = cosine_similarity(tfidf_matrix[-1], tfidf_matrix[:-1]).flatten()
+    highest_index = similarities.argmax()
+    
+    if similarities[highest_index] > 0:
+        return f"Com base nos dados carregados, aqui está uma informação relevante: {all_text[highest_index]}"
+    else:
+        return "Nenhum dado relevante encontrado para responder à pergunta."
+
+def vectorize_text(data):
+    """
+    Vetoriza o texto usando TF-IDF para comparações de similaridade textual.
+    """
+    vectorizer = TfidfVectorizer()
+    return vectorizer.fit_transform(data), vectorizer
 
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG")
-    st.image("Untitled.png", width=100)
     st.title("Bem-vindo ao Chat Geomaker Avançado com RAG!")
     st.write("Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.")
 
     groq_api_key = os.getenv('GROQ_API_KEY', 'Chave_API_Padrão')
-
-    st.sidebar.title('Customização')
-    primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
-    secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
     model_choice = st.sidebar.selectbox("Escolha um modelo", ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"])
-    conversational_memory_length = st.sidebar.slider('Tamanho da memória conversacional', 1, 50, value=5)
+    memory = ConversationBufferWindowMemory(k=5, memory_key="chat_history")  # Memória conversacional
+    data_frames = upload_data()
 
-    memory = ConversationBufferWindowMemory(k=conversational_memory_length, memory_key="chat_history", return_messages=True)
-    if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = []
-
-    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
-    upload_json_data()
+    if st.button('Mostrar Gráficos'):
+        show_data_visualizations(data_frames)
 
     user_question = st.text_input("Faça uma pergunta:")
     if user_question:
-        current_prompt = secondary_prompt if 'last_prompt' in st.session_state and st.session_state.last_prompt == primary_prompt else primary_prompt
-        st.session_state.last_prompt = current_prompt
+        response = perform_rag(user_question, data_frames)
+        st.write("Resposta do Chatbot:", response)
 
-        prompt = ChatPromptTemplate.from_messages([
-            SystemMessage(content=current_prompt),
-            MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template("{human_input}")
-        ])
-
-        conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
-        response = conversation.predict(human_input=user_question)
-        message = {'human': user_question, 'AI': response}
-        st.session_state.chat_history.append(message)
-        st.write("Chatbot:", response)
-        st.image("eu.ico", width=100)
-        st.write("""
-        Projeto Geomaker + IA 
-        - Professor: Marcelo Claro.
-        Contatos: marceloclaro@gmail.com
-        Whatsapp: (88)981587145
-        Instagram: https://www.instagram.com/marceloclaro.geomaker/
-        """)    
 if __name__ == "__main__":
     main()
