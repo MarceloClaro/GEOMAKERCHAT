@@ -40,7 +40,7 @@ def visualize_data(data):
 
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Advanced Chat Interface with RAG")
-    st.image("image_path/Untitled.png", width=100)
+    st.image("Untitled.png", width=100)
     st.title("Welcome to the Advanced Chat with RAG!")
 
     groq_api_key = os.getenv('GROQ_API_KEY', 'Default_API_Key')
