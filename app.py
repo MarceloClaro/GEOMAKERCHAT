@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain.chains import LLMChain
@@ -13,7 +12,6 @@ from langchain_groq import ChatGroq
 def upload_data():
     """
     Permite aos usuários fazer upload de arquivos JSON e CSV, armazenando-os no estado da sessão.
-    Gera uma pré-visualização dos dados carregados em forma de tabela.
     """
     uploaded_files = st.file_uploader("Faça upload dos seus arquivos (JSON ou CSV, até 300MB cada)", type=['json', 'csv'], accept_multiple_files=True)
     data_frames = []
@@ -22,17 +20,15 @@ def upload_data():
             try:
                 data = pd.read_json(file) if file.type == "application/json" else pd.read_csv(file)
                 data_frames.append(data)
-                st.session_state[file.name] = data  # Armazenar dados na sessão
                 st.write(f"Pré-visualização do arquivo {file.name} carregado:")
                 st.dataframe(data.head())
-                show_data_visualizations([data])  # Mostrar visualizações automaticamente
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo {file.name}: {e}")
     return data_frames
 
 def show_data_visualizations(data_frames):
     """
-    Gera visualizações gráficas para os DataFrames carregados, assumindo que os dados são adequados para plotagem.
+    Gera visualizações gráficas para os DataFrames carregados.
     """
     for df in data_frames:
         try:
@@ -51,20 +47,28 @@ def main():
     memory = ConversationBufferWindowMemory(k=5, memory_key="chat_history")
     data_frames = upload_data()
 
+    max_tokens = st.sidebar.slider("Máximo de Tokens:", 100, 1000, 500, 50)
+    primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
+    secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
+
     user_question = st.text_input("Faça uma pergunta:")
     if user_question:
-        current_prompt = st.sidebar.text_input("Prompt do sistema atual", "Como posso ajudar você hoje?")
+        current_prompt = secondary_prompt if memory.get_last_prompt() == primary_prompt else primary_prompt
+        memory.store_prompt(current_prompt)
+
         prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content=current_prompt),
             MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template("{human_input}")
         ])
 
-        conversation = LLMChain(llm=ChatGroq(api_key=groq_api_key, model_name=model_choice), prompt=prompt, memory=memory)
+        conversation = LLMChain(llm=ChatGroq(api_key=groq_api_key, model_name=model_choice), prompt=prompt, memory=memory, max_tokens=max_tokens)
         response = conversation.predict(human_input=user_question)
         message = {'human': user_question, 'AI': response}
         st.session_state.chat_history.append(message)
         st.write("Chatbot:", response)
+
+        show_data_visualizations(data_frames)  # Display visualizations automatically after data is processed
 
 if __name__ == "__main__":
     main()
