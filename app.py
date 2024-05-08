@@ -6,7 +6,7 @@ import numpy as np
 import seaborn as sns
 
 from langchain.chains import LLMChain
-from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage, ChatMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
@@ -25,7 +25,7 @@ def upload_and_visualize_data():
                     data = pd.read_json(file)
                 elif file.type == "text/csv":
                     data = pd.read_csv(file)
-                else:
+                else:  # XLSX
                     data = pd.read_excel(file)
                 st.session_state.setdefault('data_frames', []).append(data)
                 st.write(f"Pré-visualização do arquivo {file.name} carregado:")
@@ -68,9 +68,6 @@ def main():
     model_choice = st.sidebar.selectbox("Escolha um modelo", ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"])
     memory = ConversationBufferWindowMemory(k=5, memory_key="chat_history")
 
-    if 'chat_history' not in st.session_state:
-        st.session_state.chat_history = []
-
     upload_and_visualize_data()
 
     user_question = st.text_input("Faça uma pergunta:")
@@ -78,10 +75,13 @@ def main():
         current_prompt = secondary_prompt if 'last_prompt' in st.session_state and st.session_state.last_prompt == primary_prompt else primary_prompt
         st.session_state.last_prompt = current_prompt
 
-        # Preparing chat messages properly
-        chat_messages = [SystemMessage(content=current_prompt)]
-        chat_messages.extend([ChatMessage(content=msg) for msg in st.session_state.get('chat_history', [])])
-        chat_messages.append(HumanMessagePromptTemplate(template="{human_input}"))
+        chat_messages = [
+            SystemMessage(content=current_prompt),
+            *[
+                ChatMessage(content=msg) for msg in st.session_state.get('chat_history', [])
+            ],
+            HumanMessagePromptTemplate(template="{human_input}")
+        ]
 
         prompt = ChatPromptTemplate(messages=chat_messages)
 
