@@ -5,14 +5,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
+# Corrected import paths assuming these are the correct ones.
 from langchain.chains import LLMChain
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import SystemMessage, ChatMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
-def upload_and_visualize_data():
-    uploaded_files = st.file_uploader("Faça upload dos seus arquivos (JSON, CSV, XLSX até 200MB cada)", 
+def upload_and_process_files():
+    uploaded_files = st.file_uploader("Upload your files (JSON, CSV, XLSX up to 200MB each)", 
                                       type=['json', 'csv', 'xlsx'], accept_multiple_files=True)
     if uploaded_files:
         for file in uploaded_files:
@@ -21,36 +22,37 @@ def upload_and_visualize_data():
                     data = pd.read_json(file)
                 elif file.type == "text/csv":
                     data = pd.read_csv(file)
-                else:
+                elif file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
                     data = pd.read_excel(file)
+                
                 st.session_state.setdefault('data_frames', []).append(data)
-                st.write(f"Pré-visualização do arquivo {file.name} carregado:")
+                st.write(f"Preview of uploaded file {file.name}:")
                 st.dataframe(data.head())
                 visualize_data(data)
             except Exception as e:
-                st.error(f"Erro ao processar o arquivo {file.name}: {e}")
+                st.error(f"Error processing file {file.name}: {e}")
 
 def visualize_data(data):
     if not data.empty:
-        st.write("Visualização gráfica dos dados:")
+        st.write("Graphical visualization of data:")
         sns.pairplot(data.select_dtypes(include=[np.number]).dropna())
-        st.pyplot()
+        plt.show()
 
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Advanced Chat Interface with RAG")
-    st.image("Untitled.png", width=100)
-    st.title("Bem-vindo ao Chat Avançado com RAG!")
+    st.image("image_path/Untitled.png", width=100)
+    st.title("Welcome to the Advanced Chat with RAG!")
 
-    groq_api_key = os.getenv('GROQ_API_KEY', 'Chave_API_Padrão')
-    model_choice = st.sidebar.selectbox("Escolha um modelo", ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"])
+    groq_api_key = os.getenv('GROQ_API_KEY', 'Default_API_Key')
+    model_choice = st.sidebar.selectbox("Choose a model", ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"])
     memory = ConversationBufferWindowMemory(k=5, memory_key="chat_history")
 
-    upload_and_visualize_data()
+    upload_and_process_files()
 
-    user_question = st.text_input("Faça uma pergunta:")
+    user_question = st.text_input("Ask a question:")
     if user_question:
         chat_messages = [
-            SystemMessage(content="Como posso ajudar você hoje?"),
+            SystemMessage(content="How can I assist you today?"),
             *[ChatMessage(content=msg) for msg in st.session_state.get('chat_history', [])],
             HumanMessagePromptTemplate(template="{human_input}")
         ]
@@ -59,8 +61,8 @@ def main():
         groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
         conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
         response = conversation.predict(human_input=user_question)
-        st.session_state.chat_history.append(user_question)
-        st.session_state.chat_history.append(response)
+        st.session_state['chat_history'].append(user_question)
+        st.session_state['chat_history'].append(response)
         st.write("Chatbot:", response)
 
 if __name__ == "__main__":
