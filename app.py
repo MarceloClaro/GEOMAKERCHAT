@@ -80,4 +80,14 @@ def main():
 
         prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content=current_prompt),
-            MessagesPlaceholder
+            MessagesPlaceholder(variable_name="chat_history"),
+            HumanMessagePromptTemplate.from_template("{human_input}")
+        ])
+
+        conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
+        response = conversation.predict(human_input=user_question)
+        st.session_state.chat_history.append({'human': user_question, 'AI': response})
+        st.write("Chatbot:", response)
+
+if __name__ == "__main__":
+    main()
