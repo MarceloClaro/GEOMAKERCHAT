@@ -7,7 +7,7 @@ import seaborn as sns
 
 from langchain.chains import LLMChain
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, ChatMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
@@ -40,16 +40,17 @@ def visualize_data(data):
     Gera visualizações automáticas para os DataFrames carregados, utilizando Matplotlib e Seaborn.
     """
     if not data.empty:
-        if data.select_dtypes(include=[np.number]).shape[1] > 0:
+        numeric_columns = data.select_dtypes(include=[np.number]).columns
+        if len(numeric_columns) > 0:
             st.write("Visualização gráfica dos dados:")
             plt.figure(figsize=(10, 6))
-            sns.pairplot(data.select_dtypes(include=[np.number]))
+            sns.pairplot(data[numeric_columns].dropna())
             st.pyplot(plt)
         if 'date' in data.columns or 'Date' in data.columns:
             date_col = 'date' if 'date' in data.columns else 'Date'
             data[date_col] = pd.to_datetime(data[date_col])
             plt.figure(figsize=(10, 6))
-            plt.plot(data[date_col], data.select_dtypes(include=[np.number]).iloc[:, 0])
+            plt.plot(data[date_col], data[numeric_columns[0]].dropna(), marker='o')
             plt.title('Time Series Plot')
             plt.xlabel('Date')
             plt.ylabel('Values')
@@ -71,7 +72,6 @@ def main():
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
-    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
     upload_and_visualize_data()
 
     user_question = st.text_input("Faça uma pergunta:")
@@ -79,15 +79,16 @@ def main():
         current_prompt = secondary_prompt if 'last_prompt' in st.session_state and st.session_state.last_prompt == primary_prompt else primary_prompt
         st.session_state.last_prompt = current_prompt
 
-        prompt = ChatPromptTemplate.from_messages([
-            SystemMessage(content=current_prompt),
-            MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template("{human_input}")
-        ])
+        chat_messages = [ChatMessage(role='system', content=current_prompt)] + \
+                        [ChatMessage(role='user', content=msg) for msg in st.session_state.get('chat_history', [])]
 
+        prompt = ChatPromptTemplate(messages=chat_messages + [HumanMessagePromptTemplate(template="{human_input}")])
+
+        groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
         conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
         response = conversation.predict(human_input=user_question)
-        st.session_state.chat_history.append({'human': user_question, 'AI': response})
+        st.session_state.chat_history.append(user_question)  # Track user questions
+        st.session_state.chat_history.append(response)  # Save response
         st.write("Chatbot:", response)
 
 if __name__ == "__main__":
