@@ -8,16 +8,11 @@ from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
 def upload_data():
-    """
-    Permite aos usuários fazer upload de arquivos JSON, XLSX e CSV que podem ser usados como fonte de dados.
-    Os arquivos são carregados através de um widget de upload no Streamlit e lidos como DataFrames.
-    """
     uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv'], accept_multiple_files=True, key="data_upload")
     if uploaded_files:
         data_frames = []
         for file in uploaded_files:
             try:
-                # Tenta ler o arquivo como JSON, XLSX ou CSV e convertê-lo em DataFrame
                 if file.type == 'application/json':
                     data = pd.read_json(file)
                 elif file.type in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']:
@@ -30,7 +25,6 @@ def upload_data():
                 st.write(f"Pré-visualização do arquivo {file.type.split('/')[-1]} carregado:")
                 st.dataframe(data.head())
             except ValueError as e:
-                # Caso ocorra um erro na leitura do arquivo, mostra uma mensagem de erro
                 st.error(f"Erro ao ler o arquivo {file.name}: {e}")
         st.session_state['uploaded_data'] = data_frames
 
@@ -53,7 +47,7 @@ def main():
         st.session_state.chat_history = []
 
     groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
-    upload_data() # Chama a função modificada para upload de dados
+    upload_data()
 
     user_question = st.text_input("Faça uma pergunta:")
     if user_question:
@@ -78,6 +72,7 @@ def main():
         Contatos: marceloclaro@gmail.com
         Whatsapp: (88)981587145
         Instagram: https://www.instagram.com/marceloclaro.geomaker/
-        """)    
+        """)
+
 if __name__ == "__main__":
     main()
