@@ -28,6 +28,13 @@ def upload_data():
                 st.error(f"Erro ao ler o arquivo {file.name}: {e}")
         st.session_state['uploaded_data'] = data_frames
 
+def analyze_data(question, data_frames):
+    # Implemente a lógica para analisar os dados carregados com base na pergunta
+    # Esta função deve retornar os resultados da análise que serão usados para gerar a resposta
+    # Exemplo: análise de tendências, cálculos estatísticos, etc.
+    # Para fins de exemplo, vamos apenas retornar uma mensagem indicando que a análise foi realizada
+    return f"Analisando dados para a pergunta '{question}'..."
+
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG")
     st.image("Untitled.png", width=100)
@@ -54,14 +61,20 @@ def main():
         current_prompt = secondary_prompt if 'last_prompt' in st.session_state and st.session_state.last_prompt == primary_prompt else primary_prompt
         st.session_state.last_prompt = current_prompt
 
-        prompt = ChatPromptTemplate.from_messages([
-            SystemMessage(content=current_prompt),
-            MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template("{human_input}")
-        ])
+        # Verifica se a pergunta é complexa e requer análise profunda dos dados
+        if is_complex_question(user_question):  # Função hipotética para determinar se a pergunta é complexa
+            analysis_result = analyze_data(user_question, st.session_state['uploaded_data'])
+            response = f"{analysis_result} Por favor, tente novamente com uma pergunta mais específica."
+        else:
+            prompt = ChatPromptTemplate.from_messages([
+                SystemMessage(content=current_prompt),
+                MessagesPlaceholder(variable_name="chat_history"),
+                HumanMessagePromptTemplate.from_template("{human_input}")
+            ])
 
-        conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
-        response = conversation.predict(human_input=user_question)
+            conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
+            response = conversation.predict(human_input=user_question)
+        
         message = {'human': user_question, 'AI': response}
         st.session_state.chat_history.append(message)
         st.write("Chatbot:", response)
