@@ -94,7 +94,7 @@ def main():
         verbose=True,
         memory=True,
         backstory=(
-            "作为文章评估者，您具有敏锐的分析能力和对学术研究过程的深刻理解。您的批判性分析突出了文章的优点，也指出了文章可能存在的缺陷，为持续改进学术研究质量做出了贡献。"
+            "作为文章评估者，您具有敏锐的分析能力和对学术研究过程的深刻理解。您的批判性分析不仅突出了文章的优点，还指出了文章可能存在的缺陷，为持续改进学术研究质量做出了贡献。"
         ),
         tools=[search_tool],
         allow_delegation=False,
@@ -156,43 +156,13 @@ def main():
                     tokens_used[model] += 1  # Incrementar o contador de tokens
                     break
                 except groq.RateLimitError as e:
-                    # Extrair o tempo de espera da mensagem de erro
-                    retry_time_str = e.args[0]["error"]["message"].split("Please try again in ")[1].split(".")[0]
-                    retry_time_seconds = int(retry_time_str.split("m")[0]) * 60 + float(retry_time_str.split("m")[1][:-1])
-                    st.warning(f"Limite de taxa excedido. Aguardando {retry_time_seconds} segundos antes de tentar novamente...")
-                    time.sleep(retry_time_seconds)
-
-    # Exibir a contagem de tokens na barra lateral
-    st.sidebar.write("### Limites de Taxa")
-    st.sidebar.write("Aqui estão alguns pontos-chave sobre os limites de taxa:")
-    st.sidebar.write("Os seguintes cabeçalhos são definidos (os valores são ilustrativos):")
-    st.sidebar.write("```")
-    st.sidebar.write("Cabeçalho\tValor\tAnotações")
-    st.sidebar.write("retry-after\t2\tEm segundos")
-    st.sidebar.write("x-ratelimit-limit-requests\t14400\tSempre se refere a Solicitações por Dia (RPD)")
-    st.sidebar.write("x-ratelimit-limit-tokens\t18000\tSempre se refere a Tokens por Minuto (TPM)")
-    st.sidebar.write("x-ratelimit-remaining-requests\t14370\tSempre se refere a Solicitações por Dia (RPD)")
-    st.sidebar.write("x-ratelimit-remaining-tokens\t17997\tSempre se refere a Tokens por Minuto (TPM)")
-    st.sidebar.write("x-ratelimit-reset-requests\t2m59.56s\tSempre se refere a Solicitações por Dia (RPD)")
-    st.sidebar.write("x-ratelimit-reset-tokens\t7.66s\tSempre se refere a Tokens por Minuto (TPM)")
-    st.sidebar.write("```")
-    st.sidebar.write("Quando o limite de taxa é atingido, retornamos um código de status HTTP Too Many Requests.429")
-
-    # Exibir a tabela de limites de taxa
-    st.sidebar.write("### Limites de Taxa")
-    st.sidebar.write("Estes são os limites de taxa para sua organização:")
-    st.sidebar.write("```")
-    st.sidebar.write("ID\tSolicitações por Minuto\tPedidos por Dia\tTokens por Minuto")
-    st.sidebar.write("MixTral-8X7B-32768\t30\t14.400\t5.000")
-    st.sidebar.write("Lhama3-70B-8192\t30\t14.400\t6.000")
-    st.sidebar.write("lhama3-8b-8192\t30\t14.400\t30.000")
-    st.sidebar.write("gemma-7b-it\t30\t14.400\t15.000")
-    st.sidebar.write("```")
-
-    # Contagem de tokens usados
-    st.sidebar.write("### Contagem de Tokens Usados")
-    for model, tokens in tokens_used.items():
-        st.sidebar.write(f"{model}: {tokens}")
+                    retry_time_str = None
+                    if isinstance(e.args[0], dict) and "error" in e.args[0]:
+                        retry_time_str = e.args[0]["error"]
+                    else:
+                        retry_time_str = "Tempo de espera desconhecido"
+                    st.warning(f"Limite de taxa excedido. Aguardando {retry_time_str} segundos antes de tentar novamente...")
+                    time.sleep(retry_time_str)
 
 if __name__ == "__main__":
     main()
