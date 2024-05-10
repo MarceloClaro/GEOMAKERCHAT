@@ -16,8 +16,13 @@ groq_api_key = secrets["GROQ_API_KEY"]
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG+CreWAI")
     st.image("Untitled.png", width=100)
-    st.title("Bem-vindo ao Chat Geomaker Avançado com RAG!")
-    st.write("Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.")
+    st.title("Bem-vindo ao Chat Geomaker Avançado com RAGRAG+CreWAI!")
+    st.write("""Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.
+    Com 1 Agente: 
+    "Pesquisador Acadêmico": Encontre informações confiáveis e atuais sobre {topic} seguindo as normas científicas e da ABNT.
+    "Como pesquisador acadêmico, seu objetivo é contribuir para o avanço do conhecimento científico em sua área. Você segue rigorosamente as normas e metodologias científicas e da ABNT para garantir a qualidade e confiabilidade de suas pesquisas. Sua busca por informações é guiada pela busca da verdade e pela contribuição para a comunidade acadêmica."
+    "Pesquise e compile informações relevantes e atualizadas sobre {topic} seguindo as normas científicas e da ABNT. Certifique-se de incluir referências bibliográficas adequadas."
+    "Um resumo detalhado e bem estruturado sobre {topic} seguindo as normas científicas e da ABNT.",""")
 
     st.sidebar.title('Customização')
     primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
