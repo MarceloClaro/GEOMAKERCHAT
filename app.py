@@ -7,6 +7,7 @@ from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 
 import toml
 import time  # Para adicionar um pequeno atraso entre as solicitações
+
 # Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
@@ -86,9 +87,8 @@ def main():
         st.session_state.last_prompt = current_prompt
 
         prompt = f"{current_prompt} {user_question}"
-        conversation = ChatGroq(api_key=groq_api_key, model_name=model_choice)
-        response = conversation.predict(prompt)
-        st.write("Chatbot:", response)
+        result = crew.kickoff(inputs={"topic": user_question})
+        st.write("Chatbot:", result)
 
 if __name__ == "__main__":
     main()
