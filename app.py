@@ -2,12 +2,32 @@ import streamlit as st
 import os
 import pandas as pd
 from crewai import Agent, Task, Crew
-from crewai_tools import PDFSearchTool
+from crewai_tools import PDFSearchTool, PubMedTool, ArxivTool
 from langchain.chains import LLMChain
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
+
+# Função para consultar e ler artigos do PubMed
+def search_pubmed(query):
+    pubmed_tool = PubMedTool()
+    results = pubmed_tool.search(query)
+    articles = []
+    for result in results:
+        article = pubmed_tool.get_article(result['id'])
+        articles.append(article)
+    return articles
+
+# Função para consultar e ler artigos do arXiv
+def search_arxiv(query):
+    arxiv_tool = ArxivTool()
+    results = arxiv_tool.search(query)
+    articles = []
+    for result in results:
+        article = arxiv_tool.get_article(result['id'])
+        articles.append(article)
+    return articles
 
 def upload_data():
     uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv', 'pdf'], accept_multiple_files=True, key="data_upload")
