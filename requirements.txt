@@ -16,5 +16,5 @@ logging
 typing 
 chromadb 
 langchain.docstore.document                      
-
+setuptools
 tqdm
