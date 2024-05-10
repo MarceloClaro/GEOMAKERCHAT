@@ -1,6 +1,6 @@
 streamlit 
 pandas 
-crewai 
+crewai==0.30.0rc3
 langchain 
 langchain_core 
 langchain_groq
