@@ -7,12 +7,14 @@ from langchain_community.tools import DuckDuckGoSearchRun
 import groq  # Adicione esta linha
 import toml
 import time
+
+
 # Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
 
 def main():
-    st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG")
+    st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG +CreWai")
     st.image("Untitled.png", width=100)
     st.title("Bem-vindo ao Chat Geomaker Avançado com RAG!")
     st.write("Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.")
@@ -68,8 +70,9 @@ def main():
                 st.write("Chatbot:", result)
                 break
             except groq.RateLimitError as e:
-                st.warning(f"Rate limit exceeded. Waiting for {e.retry_after} seconds before trying again...")
-                time.sleep(e.retry_after)
+                st.warning(f"Rate limit exceeded. Waiting for {e.wait_time} seconds before trying again...")
+                time.sleep(e.wait_time)
 
 if __name__ == "__main__":
     main()
+
