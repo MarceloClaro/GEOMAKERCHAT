@@ -13,4 +13,4 @@ pandas
 crewai 
 crewai[tools]
 
-
+sqlite3
