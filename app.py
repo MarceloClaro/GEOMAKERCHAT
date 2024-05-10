@@ -7,7 +7,6 @@ from langchain.chains import LLMChain
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from langchain_groq import ChatGroq
 import toml
 
 # Função para upload de dados
@@ -50,7 +49,7 @@ def main():
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
-    groq_chat = ChatGroq(model_name="llama3-70b-8192")
+    llama3_model = LLMChain(model_name="llama3-70b-8192")
 
     uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv', 'pdf'], accept_multiple_files=True, key="data_upload")
     if uploaded_files:
@@ -73,7 +72,7 @@ def main():
             goal='Descobrir desenvolvimentos de ponta em IA e ciência de dados',
             backstory='Eu sou um Analista de Pesquisa Sênior em um think tank de tecnologia líder. Minha expertise está em identificar tendências emergentes e tecnologias inovadoras em IA e ciência de dados. Eu tenho habilidade em dissecar dados complexos e apresentar insights acionáveis.',
             allow_delegation=False,
-            tools=[groq_chat],
+            tools=[llama3_model],
             max_rpm=100
         )
 
@@ -82,7 +81,7 @@ def main():
             goal='Criar conteúdo envolvente sobre avanços tecnológicos',
             backstory='Eu sou um renomado Estrategista de Conteúdo de Tecnologia, conhecido por meus artigos perspicazes e envolventes sobre tecnologia e inovação. Com um profundo entendimento da indústria de tecnologia, eu transformo conceitos complexos em narrativas cativantes.',
             allow_delegation=True,
-            tools=[groq_chat],
+            tools=[llama3_model],
             cache=False,
             max_rpm=100
         )
@@ -93,38 +92,47 @@ def main():
             backstory='Eu sou um Cientista de Dados com expertise em analisar conjuntos de dados complexos e extrair insights valiosos. Meu objetivo é ajudá-lo a tomar decisões informadas com base em análises orientadas por dados.',
             allow_delegation=False,
             tools=[],
+            cache=False,
             max_rpm=100
         )
 
+        data_analysis_task = Task(
+            description='Analisar dados para fornecer insights sobre tendências de pesquisa em IA e ciência de dados.',
+            agents=[data_scientist],
+            human_input=False
+        )
+
         task1 = Task(
-            description='Conduzir uma análise abrangente dos últimos avanços em IA em 2024. Identificar principais tendências, tecnologias inovadoras e impactos potenciais na indústria. Compilar suas descobertas em um relatório detalhado.',
-            expected_output='Um relatório completo sobre os últimos avanços em IA em 2024, sem deixar nada de fora',
-            agent=researcher,
+            description='Pesquisar e fornecer informações sobre os últimos avanços em IA e ciência de dados.',
+            agents=[researcher],
             human_input=True,
         )
 
         task2 = Task(
-            description='Usando as informações do relatório do pesquisador, desenvolver uma postagem de blog envolvente que destaque os avanços mais significativos em IA. Sua postagem deve ser informativa e acessível, voltada para um público familiarizado com tecnologia. Procure por uma narrativa que capture a essência dessas inovações e suas implicações para o futuro.',
-            expected_output='Uma postagem de blog de 3 parágrafos formatada em markdown sobre os últimos avanços em IA em 2024',
-            agent=writer
-        )
-
-        data_analysis_task = Task(
-            description='Analisar os dados enviados e fornecer insights.',
-            expected_output='Insights de análise de dados com base nos dados enviados',
-            agent=data_scientist,
+            description='Escrever um artigo sobre as aplicações práticas da IA na ciência de dados.',
+            agents=[writer],
             human_input=True,
         )
 
-        tasks = [task1, task2, data_analysis_task]
+        crew = Crew(
+            agents=[researcher, writer, data_scientist],
+            tasks=[task1, task2, data_analysis_task],
+            verbose=2
+        )
 
-        with st.spinner("Aguarde, estou pensando..."):
-            chat_output = Crew(tasks=tasks, memory=memory).think(prompt)
-
-        st.session_state.chat_history.append(chat_output)
-
-        st.write("Resposta do Chatbot:")
-        st.write(chat_output.content)
+        result = crew.kickoff()
+        response = result
+        message = {'human': user_question, 'AI': response}
+        st.session_state.chat_history.append(message)
+        st.write("Chatbot:", response)
+        st.image("eu.ico", width=100)
+        st.write("""
+        Projeto Geomaker + IA 
+        - Professor: Marcelo Claro.
+        Contatos: marceloclaro@gmail.com
+        Whatsapp: (88)981587145
+        Instagram: https://www.instagram.com/marceloclaro.geomaker/
+        """)
 
 if __name__ == "__main__":
     main()
