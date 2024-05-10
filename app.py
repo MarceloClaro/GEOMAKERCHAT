@@ -29,44 +29,49 @@ def main():
         st.session_state.chat_history = []
 
     search_tool = DuckDuckGoSearchRun()
-
     researcher = Agent(
-        role="Pesquisador",
-        goal="Encontrar informações relevantes sobre {topic}",
+        role="Pesquisador Sênior",
+        goal="Descubra as três principais notícias de renderização em {topic}",
         verbose=True,
         memory=True,
         backstory=(
-            "Como um pesquisador dedicado, você está sempre em busca de informações relevantes e interessantes sobre uma variedade de tópicos. Sua missão é encontrar as informações mais recentes e precisas para enriquecer o conhecimento do usuário."
+            "Como assistente de pesquisa dedicado a descobrir as tendências mais impactantes, você é movido por uma curiosidade implacável e um compromisso com a inovação. Sua função envolve aprofundar-se nos desenvolvimentos mais recentes em vários setores para identificar e analisar as principais notícias de tendência em qualquer campo. Essa busca não apenas satisfaz sua sede de conhecimento, mas também permite que você contribua com insights valiosos que podem potencialmente remodelar entendimentos e expectativas em escala global."
         ),
         tools=[search_tool],
-        allow_delegation=True
+        allow_delegation=True,
+        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice)
     )
 
     blog_writer = Agent(
-        role="Escritor de Blog",
-        goal="Escrever um artigo informativo sobre {topic}",
+        role="Escritor Especialista",
+        goal="Escreva conteúdos envolventes sobre {topic}",
         verbose=True,
         memory=True,
         backstory=(
-            "Como um escritor de blog experiente, sua tarefa é transformar informações complexas em conteúdo acessível e interessante para o público em geral. Você está sempre em busca das últimas tendências e desenvolvimentos para manter seus leitores informados e engajados."
+            "Armed with the knack for distilling complex subjects into digestible, compelling stories, you, as a blog writer, masterfully weave narratives that both enlighten and engage your audience. Your writing illuminates fresh insights and discoveries, making them approachable for everyone. Through your craft, you bring to the forefront the essence of new developments across various topics, making the intricate world of news a fascinating journey for your readers."
         ),
         tools=[search_tool],
-        allow_delegation=False
+        allow_delegation=False,
+        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice)
     )
 
     research_task = Task(
-        description="Pesquisar e resumir as informações mais relevantes sobre {topic}.",
-        expected_output="Um resumo detalhado sobre {topic}.",
+        description=(
+            "Identify the next big trend in {topic}. Focus on identifying pros and cons and the overall narrative. Your final report should clearly articulate the key points its market opportunities, and potential risks."
+        ),
+        expected_output="A comprehensive 3 paragraphs long report on the {topic}",
         tools=[search_tool],
         agent=researcher
     )
 
     write_task = Task(
-        description="Escrever um artigo informativo sobre {topic}.",
-        expected_output="Um artigo bem escrito sobre {topic}.",
+        description=(
+            "Compose an insightful article on {topic}. Focus on the latest trends and how it's impacting the industry. This article should be easy to understand, engaging, and positive."
+        ),
+        expected_output="A 4 paragraph article on {topic} advancements formatted as markdown traduzido em portugues.",
         tools=[search_tool],
         agent=blog_writer,
-        async_execution=False,
+        aync_execution=False,
         output_file="blog-post.md"
     )
 
@@ -78,7 +83,10 @@ def main():
 
     user_question = st.text_input("Faça uma pergunta:")
     if user_question:
-        prompt = f"{primary_prompt} {user_question} {secondary_prompt}"
+        current_prompt = secondary_prompt if 'last_prompt' in st.session_state and st.session_state.last_prompt == primary_prompt else primary_prompt
+        st.session_state.last_prompt = current_prompt
+
+        prompt = f"{current_prompt} {user_question}"
         conversation = ChatGroq(api_key=groq_api_key, model_name=model_choice)
         response = conversation.predict(prompt)
         st.write("Chatbot:", response)
