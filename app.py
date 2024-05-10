@@ -44,7 +44,7 @@ def main():
     search_tool = DuckDuckGoSearchRun()
     academic_researcher = Agent(
         role="Pesquisador Acadêmico",
-        goal="Encontre informações confiáveis e atuais sobre {topic} seguindo as normas científicas e da ABNT",
+        goal="Encontre informações confiáveis da pubmed, arqxiv e outros buscadores acadêmicos e atuais sobre {topic} seguindo as normas científicas e das normais da ABNT",
         verbose=True,
         memory=True,
         backstory=(
@@ -57,9 +57,9 @@ def main():
 
     research_task = Task(
         description=(
-            "Pesquise e compile informações relevantes e atualizadas sobre {topic} seguindo as normas científicas e da formatação ABNT. Certifique-se de incluir referências bibliográficas adequadas."
+            "Pesquise e compile informações relevantes e atualizadas sobre {topic} seguindo as normas científicas e da formatação ABNT. Certifique-se de incluir referências bibliográficas adequadas da pubmed e arqxiv."
         ),
-        expected_output="Um resumo detalhado e bem estruturado sobre {topic} seguindo as normas científicas e nas normais da ABNT.",
+        expected_output="Um resumo detalhado e bem estruturado sobre {topic} seguindo as normas científicas e nas normais da ABNT. as resposta deve ser traduzida em portugues e escrita formalmente.",
         tools=[search_tool],
         agent=academic_researcher
     )
