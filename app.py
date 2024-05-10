@@ -1,3 +1,4 @@
+from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 import os
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
@@ -93,7 +94,7 @@ def main():
         verbose=True,
         memory=True,
         backstory=(
-            "作为文章评估者，您具有敏锐的分析能力和对学术研究过程的深刻理解。您的批判性分析突出了文章的优点，也指出了文章可能存在的缺陷，为学术研究质量的持续改进做出了贡献。"
+            "作为文章评估者，您具有敏锐的分析能力和对学术研究过程的深刻理解。您的批判性分析突出了文章的优点，也指出了文章可能存在的缺陷，为持续改进学术研究质量做出了贡献。"
         ),
         tools=[search_tool],
         allow_delegation=False,
