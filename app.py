@@ -2,8 +2,8 @@ import os
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
+from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from crewai_tools import DuckDuckGoSearchRun
 
 import toml
 import time  # Para adicionar um pequeno atraso entre as solicitações
@@ -31,60 +31,42 @@ def main():
     search_tool = DuckDuckGoSearchRun()
 
     researcher = Agent(
-        role="Pesquisador Sênior",
-        goal="Descubra as três principais notícias de renderização em {topic}",
+        role="Pesquisador",
+        goal="Encontrar informações relevantes sobre {topic}",
         verbose=True,
         memory=True,
         backstory=(
-            """
-            Como assistente de pesquisa dedicado a descobrir as tendências mais impactantes, você é movido por uma curiosidade implacável e um compromisso com a inovação. Sua função envolve aprofundar-se nos desenvolvimentos mais recentes em vários setores para identificar e analisar as principais notícias de tendência em qualquer campo. Essa busca não apenas satisfaz sua sede de conhecimento, mas também permite que você contribua com insights valiosos que podem potencialmente remodelar entendimentos e expectativas em escala global.
-            """
+            "Como um pesquisador dedicado, você está sempre em busca de informações relevantes e interessantes sobre uma variedade de tópicos. Sua missão é encontrar as informações mais recentes e precisas para enriquecer o conhecimento do usuário."
         ),
         tools=[search_tool],
-        allow_delegation=True,
-        llm=ChatGroq(groq_api_key=groq_api_key, model_name=model_choice)
+        allow_delegation=True
     )
 
     blog_writer = Agent(
-        role="Escritor Especialista",
-        goal="Escrever conteúdos envolventes sobre {topic}",
+        role="Escritor de Blog",
+        goal="Escrever um artigo informativo sobre {topic}",
         verbose=True,
         memory=True,
         backstory=(
-            """
-            Armado com o talento para destilar assuntos complexos em histórias digeríveis e envolventes, você, como escritor de blog, tece habilmente narrativas que tanto iluminam quanto envolvem seu público. Sua escrita ilumina novas percepções e descobertas, tornando-as acessíveis a todos. Através de sua arte, você traz à tona a essência de novos desenvolvimentos em diversos tópicos, tornando o intricado mundo das notícias uma jornada fascinante para seus leitores.
-            """
+            "Como um escritor de blog experiente, sua tarefa é transformar informações complexas em conteúdo acessível e interessante para o público em geral. Você está sempre em busca das últimas tendências e desenvolvimentos para manter seus leitores informados e engajados."
         ),
         tools=[search_tool],
-        allow_delegation=False,
-        llm=ChatGroq(groq_api_key=groq_api_key, model_name=model_choice)
+        allow_delegation=False
     )
 
     research_task = Task(
-        description=(
-            """
-            Identificar a próxima grande tendência em {topic}.
-            Concentre-se em identificar prós e contras e a narrativa geral.
-            Seu relatório final deve articular claramente os principais pontos, suas oportunidades de mercado e riscos potenciais.
-            """
-        ),
-        expected_output="Um relatório abrangente de 3 parágrafos sobre o {topic}",
+        description="Pesquisar e resumir as informações mais relevantes sobre {topic}.",
+        expected_output="Um resumo detalhado sobre {topic}.",
         tools=[search_tool],
         agent=researcher
     )
 
     write_task = Task(
-        description=(
-            """
-            Compor um artigo perspicaz sobre {topic}.
-            Concentre-se nas últimas tendências e como elas estão impactando a indústria.
-            Este artigo deve ser de fácil compreensão, envolvente e positivo.
-            """
-        ),
-        expected_output="Um artigo de 4 parágrafos sobre os avanços {topic} formatado como markdown traduzido em português.",
+        description="Escrever um artigo informativo sobre {topic}.",
+        expected_output="Um artigo bem escrito sobre {topic}.",
         tools=[search_tool],
         agent=blog_writer,
-        aync_execution=False,
+        async_execution=False,
         output_file="blog-post.md"
     )
 
@@ -96,28 +78,10 @@ def main():
 
     user_question = st.text_input("Faça uma pergunta:")
     if user_question:
-        current_prompt = secondary_prompt if 'last_prompt' in st.session_state and st.session_state.last_prompt == primary_prompt else primary_prompt
-        st.session_state.last_prompt = current_prompt
-
-        prompt = ChatPromptTemplate.from_messages([
-            SystemMessage(content=current_prompt),
-            MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template("{human_input}")
-        ])
-
-        conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
-        response = conversation.predict(human_input=user_question)
-        message = {'human': user_question, 'AI': response}
-        st.session_state.chat_history.append(message)
+        prompt = f"{primary_prompt} {user_question} {secondary_prompt}"
+        conversation = ChatGroq(api_key=groq_api_key, model_name=model_choice)
+        response = conversation.predict(prompt)
         st.write("Chatbot:", response)
-        st.image("eu.ico", width=100)
-        st.write("""
-        Projeto Geomaker + IA 
-        - Professor: Marcelo Claro.
-        Contatos: marceloclaro@gmail.com
-        Whatsapp: (88)981587145
-        Instagram: https://www.instagram.com/marceloclaro.geomaker/
-        """)    
 
 if __name__ == "__main__":
     main()
