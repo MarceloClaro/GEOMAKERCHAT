@@ -27,8 +27,6 @@ def main():
     st.title("Bem-vindo ao Chat Geomaker Avançado com RAG!")
     st.write("Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.")
 
-    groq_api_key = os.getenv('GROQ_API_KEY', 'Chave_API_Padrão')
-
     st.sidebar.title('Customização')
     primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
     secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
@@ -39,16 +37,17 @@ def main():
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
-    model_kwargs = {
-        "tokens_per_minute": get_tokens_per_minute(model_choice)
-    }
+    model_kwargs = {}
+    tokens_per_minute = get_tokens_per_minute(model_choice)
+    if tokens_per_minute:
+        model_kwargs["tokens_per_minute"] = tokens_per_minute
 
-    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice, model_kwargs=model_kwargs)
+    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice, **model_kwargs)
 
     user_question = st.text_input("Faça uma pergunta:")
     if user_question:
         prompt = f"{primary_prompt} {user_question} {secondary_prompt}"
-        conversation = ChatGroq(api_key=groq_api_key, model_name=model_choice, model_kwargs=model_kwargs)
+        conversation = ChatGroq(api_key=groq_api_key, model_name=model_choice, **model_kwargs)
         response = conversation.predict(prompt)
         st.write("Chatbot:", response)
 
