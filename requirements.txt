@@ -1,3 +1,5 @@
+crewai 
+crewai[tools]
 chromadb
 pandas
 scikit-learn
@@ -10,7 +12,6 @@ openpyxl
 numpy 
 streamlit 
 pandas 
-crewai 
-crewai[tools]
+
 streamlit
 embedchain
