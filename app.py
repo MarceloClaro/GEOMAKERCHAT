@@ -1,7 +1,7 @@
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
-import toml
+import time  # Para adicionar um pequeno atraso entre as solicitações
 
 # Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
@@ -76,3 +76,6 @@ topic = st.text_input("Digite o tópico da pesquisa:", "avanços científicos")
 if st.button("Iniciar Pesquisa"):
     result = crew.kickoff(inputs={"topic": topic})
     st.write(result)
+
+    # Adicionar um pequeno atraso entre as solicitações para evitar problemas de taxa
+    time.sleep(1)
