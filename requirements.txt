@@ -1,4 +1,4 @@
-logging
+chromadb
 pandas
 scikit-learn
 langchain
