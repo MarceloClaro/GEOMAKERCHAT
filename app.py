@@ -1,13 +1,14 @@
-import streamlit as st
-import os
-import pandas as pd
 from crewai import Agent, Task, Crew
-from crewai_tools import PDFSearchTool
 from langchain.chains import LLMChain
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
+
+import os
+import pandas as pd
+import streamlit as st
+from crewai_tools import PDFSearchTool
 
 # Função para upload de dados
 def upload_data():
@@ -23,9 +24,7 @@ def upload_data():
                 elif file.type == 'text/csv':
                     data = pd.read_csv(file)
                 elif file.type == 'application/pdf':
-                    # Inicializa o PDFSearchTool com o arquivo PDF enviado
                     pdf_search_tool = PDFSearchTool(pdf=file)
-                    # Usa a ferramenta para pesquisar no PDF
                     data = pdf_search_tool.search("sua consulta aqui")
                 else:
                     raise ValueError("Tipo de arquivo não suportado")
@@ -70,7 +69,6 @@ def main():
             HumanMessagePromptTemplate.from_template("{human_input}")
         ])
 
-        # Define seus agentes com seus papéis, metas e ferramentas
         researcher = Agent(
             role='Senior Research Analyst',
             goal='Descobrir desenvolvimentos de ponta em IA e ciência de dados',
@@ -88,7 +86,7 @@ def main():
             verbose=True,
             allow_delegation=True,
             tools=[groq_chat],
-            cache=False, # Desativa o cache para este agente
+            cache=False,
             max_rpm=100
         )
 
@@ -102,7 +100,6 @@ def main():
             max_rpm=100
         )
 
-        # Cria tarefas para seus agentes
         task1 = Task(
             description='Conduzir uma análise abrangente dos últimos avanços em IA em 2024. Identificar principais tendências, tecnologias inovadoras e impactos potenciais na indústria. Compilar suas descobertas em um relatório detalhado.',
             expected_output='Um relatório completo sobre os últimos avanços em IA em 2024, sem deixar nada de fora',
@@ -123,20 +120,15 @@ def main():
             human_input=True,
         )
 
-        # Inicializa sua equipe com um processo sequencial
         crew = Crew(
             agents=[researcher, writer, data_scientist],
             tasks=[task1, task2, data_analysis_task],
             verbose=2
         )
 
-        # Faz sua equipe começar a trabalhar!
         result = crew.kickoff()
 
-        # Processa o resultado (se necessário)
-        # ...
-
-        response = result  # Usa o resultado como resposta do chatbot por enquanto
+        response = result
         message = {'human': user_question, 'AI': response}
         st.session_state.chat_history.append(message)
         st.write("Chatbot:", response)
