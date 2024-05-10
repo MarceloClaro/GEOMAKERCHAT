@@ -12,3 +12,4 @@ streamlit
 pandas 
 crewai 
 crewai[tools]
+streamlit
