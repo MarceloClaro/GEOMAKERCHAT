@@ -11,6 +11,6 @@ numpy
 streamlit 
 pandas 
 crewai 
-crewai_tools
+crewai[tools]
 streamlit
 embedchain
