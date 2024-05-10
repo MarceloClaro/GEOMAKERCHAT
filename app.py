@@ -2,14 +2,13 @@ import streamlit as st
 import os
 import pandas as pd
 from crewai import Agent, Task, Crew
-from crewai_tools import PDFSearchTool, PubMedTool
+from crewai_tools import PDFSearchTool
 from langchain.chains import LLMChain
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
-# Função para upload de dados
 def upload_data():
     uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv', 'pdf'], accept_multiple_files=True, key="data_upload")
     if uploaded_files:
@@ -23,10 +22,10 @@ def upload_data():
                 elif file.type == 'text/csv':
                     data = pd.read_csv(file)
                 elif file.type == 'application/pdf':
-                    # Inicializa o PDFSearchTool com o arquivo PDF enviado
+                    # Initialize PDFSearchTool with the uploaded PDF file
                     pdf_search_tool = PDFSearchTool(pdf=file)
-                    # Usa a ferramenta para pesquisar no PDF
-                    data = pdf_search_tool.search("sua consulta aqui")
+                    # Use the tool to search within the PDF
+                    data = pdf_search_tool.search("your_query_here")
                 else:
                     raise ValueError("Tipo de arquivo não suportado")
                 data_frames.append(data)
@@ -36,7 +35,6 @@ def upload_data():
                 st.error(f"Erro ao ler o arquivo {file.name}: {e}")
         st.session_state['uploaded_data'] = data_frames
 
-# Função principal
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG")
     st.image("Untitled.png", width=100)
@@ -45,7 +43,6 @@ def main():
 
     groq_api_key = os.getenv('GROQ_API_KEY', 'Chave_API_Padrão')
 
-    # Configurações da barra lateral
     st.sidebar.title('Customização')
     primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
     secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
@@ -70,11 +67,11 @@ def main():
             HumanMessagePromptTemplate.from_template("{human_input}")
         ])
 
-        # Define seus agentes com seus papéis, metas e ferramentas
+        # Define your CrewAI agents with roles, goals, and tools
         researcher = Agent(
             role='Senior Research Analyst',
-            goal='Descobrir desenvolvimentos de ponta em IA e ciência de dados',
-            backstory='Eu sou um Analista de Pesquisa Sênior em um think tank de tecnologia líder. Minha expertise está em identificar tendências emergentes e tecnologias inovadoras em IA e ciência de dados. Eu tenho habilidade em dissecar dados complexos e apresentar insights acionáveis.',
+            goal='Uncover cutting-edge developments in AI and data science',
+            backstory='I am a Senior Research Analyst at a leading tech think tank. My expertise lies in identifying emerging trends and technologies in AI and data science. I have a knack for dissecting complex data and presenting actionable insights.',
             verbose=True,
             allow_delegation=False,
             tools=[groq_chat],
@@ -83,60 +80,47 @@ def main():
 
         writer = Agent(
             role='Tech Content Strategist',
-            goal='Criar conteúdo envolvente sobre avanços tecnológicos',
-            backstory='Eu sou um renomado Estrategista de Conteúdo de Tecnologia, conhecido por meus artigos perspicazes e envolventes sobre tecnologia e inovação. Com um profundo entendimento da indústria de tecnologia, eu transformo conceitos complexos em narrativas cativantes.',
+            goal='Craft compelling content on tech advancements',
+            backstory='I am a renowned Tech Content Strategist, known for my insightful and engaging articles on technology and innovation. With a deep understanding of the tech industry, I transform complex concepts into compelling narratives.',
             verbose=True,
             allow_delegation=True,
             tools=[groq_chat],
-            cache=False, # Desativa o cache para este agente
+            cache=False, # Disable cache for this agent
             max_rpm=100
         )
 
         data_scientist = Agent(
             role='Data Scientist',
-            goal='Analisar dados e fornecer insights',
-            backstory='Eu sou um Cientista de Dados com expertise em analisar conjuntos de dados complexos e extrair insights valiosos. Meu objetivo é ajudá-lo a tomar decisões informadas com base em análises orientadas por dados.',
+            goal='Analyze data and provide insights',
+            backstory='I am a Data Scientist with expertise in analyzing complex data sets and extracting valuable insights. My goal is to help you make informed decisions based on data-driven analysis.',
             verbose=True,
-            allow_delegation=False,
-            tools=[],
+            allow_delegation=True,
+            tools=[groq_chat],
+            cache=False, # Disable cache for this agent
             max_rpm=100
         )
 
-        # Cria tarefas para seus agentes
-        task1 = Task(
-            description='Conduzir uma análise abrangente dos últimos avanços em IA em 2024. Identificar principais tendências, tecnologias inovadoras e impactos potenciais na indústria. Compilar suas descobertas em um relatório detalhado.',
-            expected_output='Um relatório completo sobre os últimos avanços em IA em 2024, sem deixar nada de fora',
+        task = Task(
+            description='Answer user inquiries',
+            expected_output='A response to the user inquiry',
             agent=researcher,
             human_input=True,
         )
 
-        task2 = Task(
-            description='Usando as informações do relatório do pesquisador, desenvolver uma postagem de blog envolvente que destaque os avanços mais significativos em IA. Sua postagem deve ser informativa e acessível, voltada para um público familiarizado com tecnologia. Procure por uma narrativa que capture a essência dessas inovações e suas implicações para o futuro.',
-            expected_output='Uma postagem de blog de 3 parágrafos formatada em markdown sobre os últimos avanços em IA em 2024',
-            agent=writer
-        )
-
         data_analysis_task = Task(
-            description='Analisar os dados enviados e fornecer insights.',
-            expected_output='Insights de análise de dados com base nos dados enviados',
+            description='Analyze uploaded data',
+            expected_output='Insights from the data analysis',
             agent=data_scientist,
-            human_input=True,
+            human_input=False,  # No human input required for this task
         )
 
-        # Inicializa sua equipe com um processo sequencial
         crew = Crew(
             agents=[researcher, writer, data_scientist],
-            tasks=[task1, task2, data_analysis_task],
+            tasks=[task, data_analysis_task],
             verbose=2
         )
 
-        # Faz sua equipe começar a trabalhar!
-        result = crew.kickoff()
-
-        # Processa o resultado (se necessário)
-        # ...
-
-        response = result  # Usa o resultado como resposta do chatbot por enquanto
+        response = crew.kickoff(human_input=user_question)
         message = {'human': user_question, 'AI': response}
         st.session_state.chat_history.append(message)
         st.write("Chatbot:", response)
