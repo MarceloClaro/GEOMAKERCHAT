@@ -5,3 +5,4 @@ langchain
 langchain_core 
 langchain_groq
 pysqlite3-binary
+crewai[tools]
