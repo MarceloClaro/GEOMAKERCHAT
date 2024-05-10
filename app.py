@@ -42,9 +42,7 @@ def main():
 
     # Carrega as configurações do arquivo secrets.toml
     secrets = toml.load("secrets.toml")
-    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
-
-
+    groq_api_key = secrets.get("GROQ_API_KEY")
 
     if not groq_api_key:
         st.error("Chave da API GROQ não encontrada. Por favor, verifique o arquivo secrets.toml.")
@@ -61,8 +59,7 @@ def main():
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
-    # Inicialize o LLMChain com a chave de API do LLM3
-    llm3_chain = LLMChain(api_key=groq_api_key, model_name=model_choice)
+    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
 
     uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv', 'pdf'], accept_multiple_files=True, key="data_upload")
     if uploaded_files:
@@ -83,18 +80,18 @@ def main():
         researcher = Agent(
             role='Senior Research Analyst',
             goal='Descobrir desenvolvimentos de ponta em IA e ciência de dados',
-            backstory='...',
+            backstory='Eu sou um Analista de Pesquisa Sênior em um think tank de tecnologia líder. Minha expertise está em identificar tendências emergentes e tecnologias inovadoras em IA e ciência de dados. Eu tenho habilidade em dissecar dados complexos e apresentar insights acionáveis.',
             allow_delegation=False,
-            tools=[llm3_chain],  # Adicione o LLMChain aqui
+            tools=[groq_chat],
             max_rpm=100
         )
 
         writer = Agent(
             role='Tech Content Strategist',
             goal='Criar conteúdo envolvente sobre avanços tecnológicos',
-            backstory='...',
+            backstory='Eu sou um renomado Estrategista de Conteúdo de Tecnologia, conhecido por meus artigos perspicazes e envolventes sobre tecnologia e inovação. Com um profundo entendimento da indústria de tecnologia, eu transformo conceitos complexos em narrativas cativantes.',
             allow_delegation=True,
-            tools=[llm3_chain],  # Adicione o LLMChain aqui
+            tools=[groq_chat],
             cache=False,
             max_rpm=100
         )
@@ -102,7 +99,7 @@ def main():
         data_scientist = Agent(
             role='Data Scientist',
             goal='Analisar dados e fornecer insights',
-            backstory='...',
+            backstory='Eu sou um Cientista de Dados com expertise em analisar conjuntos de dados complexos e extrair insights valiosos. Meu objetivo é ajudá-lo a tomar decisões informadas com base em análises orientadas por dados.',
             allow_delegation=False,
             tools=[],
             max_rpm=100
