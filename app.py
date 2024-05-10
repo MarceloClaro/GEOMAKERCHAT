@@ -163,7 +163,38 @@ def main():
                     time.sleep(retry_time_seconds)
 
         # Exibir a contagem de tokens na barra lateral
-        st.sidebar.write(f"Tokens usados ({model}): {tokens_used[model]} de {rate_limits[model]}")
+        st.sidebar.write("### Limites de Taxa")
+        st.sidebar.write("Aqui estão alguns pontos-chave sobre os limites de taxa:")
+        st.sidebar.write("Os seguintes cabeçalhos são definidos (os valores são ilustrativos):")
+        st.sidebar.write("```")
+        st.sidebar.write("Cabeçalho\tValor\tAnotações")
+        st.sidebar.write("retry-after\t2\tEm segundos")
+        st.sidebar.write("x-ratelimit-limit-requests\t14400\tSempre se refere a Solicitações por Dia (RPD)")
+        st.sidebar.write("x-ratelimit-limit-tokens\t18000\tSempre se refere a Tokens por Minuto (TPM)")
+        st.sidebar.write("x-ratelimit-remaining-requests\t14370\tSempre se refere a Solicitações por Dia (RPD)")
+        st.sidebar.write("x-ratelimit-remaining-tokens\t17997\tSempre se refere a Tokens por Minuto (TPM)")
+        st.sidebar.write("x-ratelimit-reset-requests\t2m59.56s\tSempre se refere a Solicitações por Dia (RPD)")
+        st.sidebar.write("x-ratelimit-reset-tokens\t7.66s\tSempre se refere a Tokens por Minuto (TPM)")
+        st.sidebar.write("```")
+        st.sidebar.write("Quando o limite de taxa é atingido, retornamos um código de status HTTP Too Many Requests.429")
+    
+        # Exibir a tabela de limites de taxa
+        st.sidebar.write("### Limites de Taxa")
+        st.sidebar.write("Estes são os limites de taxa para sua organização:")
+        st.sidebar.write("```")
+        st.sidebar.write("ID\tSolicitações por Minuto\tPedidos por Dia\tTokens por Minuto")
+        st.sidebar.write("MixTral-8X7B-32768\t30\t14.400\t5.000")
+        st.sidebar.write("Lhama3-70B-8192\t30\t14.400\t6.000")
+        st.sidebar.write("lhama3-8b-8192\t30\t14.400\t30.000")
+        st.sidebar.write("gemma-7b-it\t30\t14.400\t15.000")
+        st.sidebar.write("```")
+    
+        # Contagem de tokens usados
+        st.sidebar.write("### Contagem de Tokens Usados")
+        for model, tokens in tokens_used.items():
+            st.sidebar.write(f"{model}: {tokens}")
+
+        
 
 if __name__ == "__main__":
     main()
