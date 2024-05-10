@@ -7,3 +7,4 @@ langchain_groq
 pysqlite3-binary
 crewai[tools]
 duckduckgo-search
+langchain_community 
