@@ -9,6 +9,7 @@ from langchain_core.messages import SystemMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
+# Função para upload de dados
 def upload_data(uploaded_files):
     data_frames = []
     for file in uploaded_files:
@@ -31,6 +32,7 @@ def upload_data(uploaded_files):
             st.error(f"Erro ao ler o arquivo {file.name}: {e}")
     return data_frames
 
+# Função principal
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG")
     st.image("Untitled.png", width=100)
@@ -39,6 +41,7 @@ def main():
 
     groq_api_key = os.getenv('GROQ_API_KEY', 'Chave_API_Padrão')
 
+    # Configurações da barra lateral
     st.sidebar.title('Customização')
     primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
     secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
@@ -71,7 +74,6 @@ def main():
             role='Senior Research Analyst',
             goal='Descobrir desenvolvimentos de ponta em IA e ciência de dados',
             backstory='Eu sou um Analista de Pesquisa Sênior em um think tank de tecnologia líder. Minha expertise está em identificar tendências emergentes e tecnologias inovadoras em IA e ciência de dados. Eu tenho habilidade em dissecar dados complexos e apresentar insights acionáveis.',
-            verbose=True,
             allow_delegation=False,
             tools=[groq_chat],
             max_rpm=100
@@ -81,7 +83,6 @@ def main():
             role='Tech Content Strategist',
             goal='Criar conteúdo envolvente sobre avanços tecnológicos',
             backstory='Eu sou um renomado Estrategista de Conteúdo de Tecnologia, conhecido por meus artigos perspicazes e envolventes sobre tecnologia e inovação. Com um profundo entendimento da indústria de tecnologia, eu transformo conceitos complexos em narrativas cativantes.',
-            verbose=True,
             allow_delegation=True,
             tools=[groq_chat],
             cache=False,
@@ -92,7 +93,6 @@ def main():
             role='Data Scientist',
             goal='Analisar dados e fornecer insights',
             backstory='Eu sou um Cientista de Dados com expertise em analisar conjuntos de dados complexos e extrair insights valiosos. Meu objetivo é ajudá-lo a tomar decisões informadas com base em análises orientadas por dados.',
-            verbose=True,
             allow_delegation=False,
             tools=[],
             max_rpm=100
