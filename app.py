@@ -11,16 +11,6 @@ import time  # Para adicionar um pequeno atraso entre as solicitações
 secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
 
-def get_tokens_per_minute(model_name):
-    # Defina os limites de tokens por minuto para cada modelo
-    model_limits = {
-        "llama3-70b-8192": 3000,
-        "llama3-8b-8192": 4000,
-        "mixtral-8x7b-32768": 5000,
-        "gemma-7b-it": 2000
-    }
-    return model_limits.get(model_name, 3000)  # Padrão para 3000 se o modelo não estiver na lista
-
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG")
     st.image("Untitled.png", width=100)
@@ -38,10 +28,6 @@ def main():
         st.session_state.chat_history = []
 
     model_kwargs = {}
-    tokens_per_minute = get_tokens_per_minute(model_choice)
-    if tokens_per_minute:
-        model_kwargs["tokens_per_minute"] = tokens_per_minute
-
     groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice, **model_kwargs)
 
     user_question = st.text_input("Faça uma pergunta:")
