@@ -9,7 +9,6 @@ from langchain_core.messages import SystemMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
-# Função para upload de dados
 def upload_data(uploaded_files):
     data_frames = []
     for file in uploaded_files:
@@ -32,7 +31,6 @@ def upload_data(uploaded_files):
             st.error(f"Erro ao ler o arquivo {file.name}: {e}")
     return data_frames
 
-# Função principal
 def main():
     st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG")
     st.image("Untitled.png", width=100)
@@ -41,7 +39,6 @@ def main():
 
     groq_api_key = os.getenv('GROQ_API_KEY', 'Chave_API_Padrão')
 
-    # Configurações da barra lateral
     st.sidebar.title('Customização')
     primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
     secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
