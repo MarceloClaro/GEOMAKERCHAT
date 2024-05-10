@@ -40,26 +40,17 @@ def main():
     st.title("Bem-vindo ao Chat Geomaker Avançado com RAG!")
     st.write("Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.")
 
-    # Carrega as configurações do arquivo secrets.toml
-    secrets = toml.load("secrets.toml")
-    groq_api_key = secrets.get("GROQ_API_KEY")
-
-    if not groq_api_key:
-        st.error("Chave da API GROQ não encontrada. Por favor, verifique o arquivo secrets.toml.")
-        st.stop()
-
     # Configurações da barra lateral
     st.sidebar.title('Customização')
     primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
     secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
-    model_choice = st.sidebar.selectbox("Escolha um modelo", ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"])
     conversational_memory_length = st.sidebar.slider('Tamanho da memória conversacional', 1, 50, value=5)
 
     memory = ConversationBufferWindowMemory(k=conversational_memory_length, memory_key="chat_history", return_messages=True)
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
-    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
+    groq_chat = ChatGroq(model_name="llama3-70b-8192")
 
     uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv', 'pdf'], accept_multiple_files=True, key="data_upload")
     if uploaded_files:
@@ -125,25 +116,15 @@ def main():
             human_input=True,
         )
 
-        crew = Crew(
-            agents=[researcher, writer, data_scientist],
-            tasks=[task1, task2, data_analysis_task],
-            verbose=2
-        )
+        tasks = [task1, task2, data_analysis_task]
 
-        result = crew.kickoff()
-        response = result
-        message = {'human': user_question, 'AI': response}
-        st.session_state.chat_history.append(message)
-        st.write("Chatbot:", response)
-        st.image("eu.ico", width=100)
-        st.write("""
-        Projeto Geomaker + IA 
-        - Professor: Marcelo Claro.
-        Contatos: marceloclaro@gmail.com
-        Whatsapp: (88)981587145
-        Instagram: https://www.instagram.com/marceloclaro.geomaker/
-        """)
+        with st.spinner("Aguarde, estou pensando..."):
+            chat_output = Crew(tasks=tasks, memory=memory).think(prompt)
+
+        st.session_state.chat_history.append(chat_output)
+
+        st.write("Resposta do Chatbot:")
+        st.write(chat_output.content)
 
 if __name__ == "__main__":
     main()
