@@ -8,8 +8,15 @@ import time  # Para adicionar um pequeno atraso entre as solicitações
 secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
 
-# Inicializar o modelo Groq
-llm = ChatGroq(temperature=0, groq_api_key=groq_api_key, model_name="llama3-70b-8192")
+# Interface do chat Streamlit
+st.title("Chat de Pesquisa Científica")
+topic = st.text_input("Digite o tópico da pesquisa:", "avanços científicos")
+
+# Controle deslizante para o usuário controlar o número de tokens por minuto (TPM)
+tokens_per_minute = st.slider('Tokens por minuto', 100, 5000, value=3000)
+
+# Inicializar o modelo Groq com o número de tokens por minuto configurado
+llm = ChatGroq(temperature=0, groq_api_key=groq_api_key, model_name="llama3-70b-8192", tokens_per_minute=tokens_per_minute)
 
 # Definir agentes
 researcher = Agent(
@@ -71,9 +78,6 @@ crew = Crew(
     process=Process.sequential
 )
 
-# Interface do chat Streamlit
-st.title("Chat de Pesquisa Científica")
-topic = st.text_input("Digite o tópico da pesquisa:", "avanços científicos")
 if st.button("Iniciar Pesquisa"):
     result = crew.kickoff(inputs={"topic": topic})
     st.write(result)
