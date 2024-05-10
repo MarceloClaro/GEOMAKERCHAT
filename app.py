@@ -2,6 +2,8 @@ import os
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
+from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+
 import toml
 import time  # Para adicionar um pequeno atraso entre as solicitações
 
