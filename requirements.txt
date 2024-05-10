@@ -12,9 +12,3 @@ streamlit
 pandas 
 crewai 
 crewai[tools]
-logging                                                          
-typing 
-chromadb 
-langchain.docstore.document                      
-setuptools
-tqdm
