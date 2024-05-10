@@ -9,3 +9,4 @@ seaborn
 openpyxl
 numpy 
 crewai
+crewai[tools]
