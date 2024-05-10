@@ -13,3 +13,4 @@ pandas
 crewai 
 crewai[tools]
 streamlit
+embedchain
