@@ -8,6 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplat
 from langchain_core.messages import SystemMessage
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
+import toml
 
 # Função para upload de dados
 def upload_data(uploaded_files):
@@ -39,7 +40,13 @@ def main():
     st.title("Bem-vindo ao Chat Geomaker Avançado com RAG!")
     st.write("Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.")
 
-    groq_api_key = os.getenv('GROQ_API_KEY', 'Chave_API_Padrão')
+    # Carrega as configurações do arquivo secrets.toml
+    secrets = toml.load("secrets.toml")
+    groq_api_key = secrets.get("GROQ_API_KEY")
+
+    if not groq_api_key:
+        st.error("Chave da API GROQ não encontrada. Por favor, verifique o arquivo secrets.toml.")
+        st.stop()
 
     # Configurações da barra lateral
     st.sidebar.title('Customização')
