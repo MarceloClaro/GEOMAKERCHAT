@@ -42,7 +42,9 @@ def main():
 
     # Carrega as configurações do arquivo secrets.toml
     secrets = toml.load("secrets.toml")
-    groq_api_key = secrets.get("GROQ_API_KEY")
+    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
+
+
 
     if not groq_api_key:
         st.error("Chave da API GROQ não encontrada. Por favor, verifique o arquivo secrets.toml.")
