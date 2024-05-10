@@ -18,15 +18,17 @@ def main():
     st.image("Untitled.png", width=100)
     st.title("Bem-vindo ao Chat Geomaker Avançado com RAGRAG+CreWAI!")
     st.write("""Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.
-    Com 1 Agente: 
-    Pesquisador Acadêmico": Encontre informações confiáveis e atuais sobre tópico, seguindo as normas científicas e da ABNT.
     
+    Com 1 Agente: 
+    
+    Pesquisador Acadêmico": Encontre informações confiáveis e atuais sobre tópico, seguindo as normas científicas e da ABNT.
     Como pesquisador acadêmico, seu objetivo é contribuir para o avanço do conhecimento científico em sua área. 
     Você segue rigorosamente as normas e metodologias científicas e da ABNT para garantir a qualidade e confiabilidade de suas pesquisas.
     Sua busca por informações é guiada pela busca da verdade e pela contribuição para a comunidade acadêmica.
     Pesquise e compile informações relevantes e atualizadas sobre o assunto, seguindo as normas científicas e da formatação ABNT. 
     Certifique-se de incluir referências bibliográficas adequadas.
     Um resumo detalhado e bem estruturado sobre o tema, seguindo as normas científicas e nas normais da ABNT.
+    
     """)
 
     st.sidebar.title('Customização')
