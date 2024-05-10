@@ -22,7 +22,7 @@ def main():
     "Pesquisador Acadêmico": Encontre informações confiáveis e atuais sobre {topic} seguindo as normas científicas e da ABNT.
     "Como pesquisador acadêmico, seu objetivo é contribuir para o avanço do conhecimento científico em sua área. Você segue rigorosamente as normas e metodologias científicas e da ABNT para garantir a qualidade e confiabilidade de suas pesquisas. Sua busca por informações é guiada pela busca da verdade e pela contribuição para a comunidade acadêmica."
     "Pesquise e compile informações relevantes e atualizadas sobre seguindo as normas científicas e da formatação ABNT. Certifique-se de incluir referências bibliográficas adequadas."
-    "Um resumo detalhado e bem estruturado sobre {topic} seguindo as normas científicas e da ABNT.",""")
+    "Um resumo detalhado e bem estruturado sobre seguindo as normas científicas e nas normais da ABNT.",""")
 
     st.sidebar.title('Customização')
     primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
@@ -52,7 +52,7 @@ def main():
         description=(
             "Pesquise e compile informações relevantes e atualizadas sobre {topic} seguindo as normas científicas e da formatação ABNT. Certifique-se de incluir referências bibliográficas adequadas."
         ),
-        expected_output="Um resumo detalhado e bem estruturado sobre {topic} seguindo as normas científicas e da ABNT.",
+        expected_output="Um resumo detalhado e bem estruturado sobre {topic} seguindo as normas científicas e nas normais da ABNT.",
         tools=[search_tool],
         agent=academic_researcher
     )
