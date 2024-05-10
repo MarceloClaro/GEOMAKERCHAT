@@ -4,7 +4,8 @@ from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
 from langchain_community.tools import DuckDuckGoSearchRun
 import groq  # Adicione esta linha
-
+import toml
+import time
 # Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
