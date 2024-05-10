@@ -3,11 +3,7 @@ import streamlit as st
 from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
 from langchain_community.tools import DuckDuckGoSearchRun
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-import groq
-
-import toml
-import time
+import groq  # Adicione esta linha
 
 # Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
@@ -30,55 +26,31 @@ def main():
         st.session_state.chat_history = []
 
     search_tool = DuckDuckGoSearchRun()
-    researcher = Agent(
-        role="Pesquisador Sênior",
-        goal="Descubra as três principais notícias de renderização em {topic}",
+    academic_researcher = Agent(
+        role="Pesquisador Acadêmico",
+        goal="Encontre informações confiáveis e atuais sobre {topic} seguindo as normas científicas e da ABNT",
         verbose=True,
         memory=True,
         backstory=(
-            "Como assistente de pesquisa dedicado a descobrir as tendências mais impactantes, você é movido por uma curiosidade implacável e um compromisso com a inovação. Sua função envolve aprofundar-se nos desenvolvimentos mais recentes em vários setores para identificar e analisar as principais notícias de tendência em qualquer campo. Essa busca não apenas satisfaz sua sede de conhecimento, mas também permite que você contribua com insights valiosos que podem potencialmente remodelar entendimentos e expectativas em escala global."
+            "Como pesquisador acadêmico, seu objetivo é contribuir para o avanço do conhecimento científico em sua área. Você segue rigorosamente as normas e metodologias científicas e da ABNT para garantir a qualidade e confiabilidade de suas pesquisas. Sua busca por informações é guiada pela busca da verdade e pela contribuição para a comunidade acadêmica."
         ),
         tools=[search_tool],
         allow_delegation=True,
         llm=ChatGroq(api_key=groq_api_key, model_name=model_choice)
     )
 
-    blog_writer = Agent(
-        role="Escritor Especialista",
-        goal="Escreva conteúdos envolventes sobre {topic}",
-        verbose=True,
-        memory=True,
-        backstory=(
-            "Armed with the knack for distilling complex subjects into digestible, compelling stories, you, as a blog writer, masterfully weave narratives that both enlighten and engage your audience. Your writing illuminates fresh insights and discoveries, making them approachable for everyone. Through your craft, you bring to the forefront the essence of new developments across various topics, making the intricate world of news a fascinating journey for your readers."
-        ),
-        tools=[search_tool],
-        allow_delegation=False,
-        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice)
-    )
-
     research_task = Task(
         description=(
-            "Identify the next big trend in {topic}. Focus on identifying pros and cons and the overall narrative. Your final report should clearly articulate the key points its market opportunities, and potential risks."
+            "Pesquise e compile informações relevantes e atualizadas sobre {topic} seguindo as normas científicas e da ABNT. Certifique-se de incluir referências bibliográficas adequadas."
         ),
-        expected_output="A comprehensive 3 paragraphs long report on the {topic}",
+        expected_output="Um resumo detalhado e bem estruturado sobre {topic} seguindo as normas científicas e da ABNT.",
         tools=[search_tool],
-        agent=researcher
-    )
-
-    write_task = Task(
-        description=(
-            "Compose an insightful article on {topic}. Focus on the latest trends and how it's impacting the industry. This article should be easy to understand, engaging, and positive."
-        ),
-        expected_output="A 4 paragraph article on {topic} advancements formatted as markdown traduzido em portugues.",
-        tools=[search_tool],
-        agent=blog_writer,
-        aync_execution=False,
-        output_file="blog-post.md"
+        agent=academic_researcher
     )
 
     crew = Crew(
-        agents=[researcher, blog_writer],
-        tasks=[research_task, write_task],
+        agents=[academic_researcher],
+        tasks=[research_task],
         process=Process.sequential
     )
 
@@ -94,8 +66,8 @@ def main():
                 st.write("Chatbot:", result)
                 break
             except groq.RateLimitError as e:
-                st.warning(f"Rate limit exceeded. Waiting for {e.wait_time} seconds before trying again...")
-                time.sleep(e.wait_time)
+                st.warning(f"Rate limit exceeded. Waiting for {e.retry_after} seconds before trying again...")
+                time.sleep(e.retry_after)
 
 if __name__ == "__main__":
     main()
