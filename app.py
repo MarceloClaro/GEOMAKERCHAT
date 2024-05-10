@@ -23,9 +23,7 @@ def upload_data():
                 elif file.type == 'text/csv':
                     data = pd.read_csv(file)
                 elif file.type == 'application/pdf':
-                    # Inicializa o PDFSearchTool com o arquivo PDF enviado
                     pdf_search_tool = PDFSearchTool(pdf=file)
-                    # Usa a ferramenta para buscar dentro do PDF
                     data = pdf_search_tool.search("your_query_here")
                 else:
                     raise ValueError("Tipo de arquivo não suportado")
@@ -70,7 +68,6 @@ def main():
             HumanMessagePromptTemplate.from_template("{human_input}")
         ])
 
-        # Define os agentes da CrewAI com papéis, objetivos e ferramentas
         researcher = Agent(
             role='Senior Research Analyst',
             goal='Uncover cutting-edge developments in AI and data science',
@@ -102,7 +99,6 @@ def main():
             max_rpm=100
         )
 
-        # Cria tarefas para os agentes
         task1 = Task(
             description='Conduct a comprehensive analysis of the latest advancements in AI in 2024. Identify key trends, breakthrough technologies, and potential industry impacts. Compile your findings in a detailed report.',
             expected_output='A comprehensive full report on the latest AI advancements in 2024, leave nothing out',
@@ -123,20 +119,15 @@ def main():
             human_input=True,
         )
 
-        # Instancia a CrewAI com um processo sequencial
         crew = Crew(
             agents=[researcher, writer, data_scientist],
             tasks=[task1, task2, data_analysis_task],
             verbose=2
         )
 
-        # Coloca sua equipe para trabalhar!
         result = crew.kickoff()
 
-        # Processa o resultado (se necessário)
-        # ...
-
-        response = result  # Usa o resultado como resposta do chatbot por enquanto
+        response = result
         message = {'human': user_question, 'AI': response}
         st.session_state.chat_history.append(message)
         st.write("Chatbot:", response)
