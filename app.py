@@ -2,91 +2,46 @@ import streamlit as st
 from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
 import toml
-import time
+import time  # Para adicionar um pequeno atraso entre as solicitações
 
-# Load the Groq API key from the secrets.toml file
+# Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
 
-# Initialize the Groq model
-llm = None
+def get_tokens_per_minute(model_name):
+    # Defina os limites de tokens por minuto para cada modelo
+    model_limits = {
+        "llama3-70b-8192": 3000,
+        "llama3-8b-8192": 4000,
+        "mixtral-8x7b-32768": 5000,
+        "gemma-7b-it": 2000
+    }
+    return model_limits.get(model_name, 3000)  # Padrão para 3000 se o modelo não estiver na lista
 
-# Streamlit UI
-st.title("Chat de Pesquisa Científica")
+def main():
+    st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG")
+    st.image("Untitled.png", width=100)
+    st.title("Bem-vindo ao Chat Geomaker Avançado com RAG!")
+    st.write("Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.")
 
-# Model selection
-model_choice = st.selectbox(
-    "Escolha um modelo LLM:",
-    ["llama3-70b-8192", "llama3-11b", "llama3-4b", "llama3-turbo"]
-)
+    groq_api_key = os.getenv('GROQ_API_KEY', 'Chave_API_Padrão')
 
-if st.button("Confirmar escolha do modelo"):
-    llm = ChatGroq(temperature=0, groq_api_key=groq_api_key, model_name=model_choice)
-    st.write(f"Modelo selecionado: {model_choice}")
+    st.sidebar.title('Customização')
+    primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
+    secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
+    model_choice = st.sidebar.selectbox("Escolha um modelo", ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"])
+    conversational_memory_length = st.sidebar.slider('Tamanho da memória conversacional', 1, 50, value=5)
 
-    # Define the agents and tasks
-    researcher = Agent(
-        role="Pesquisador Científico",
-        goal="descubra os três principais avanços científicos em {topic}",
-        verbose=True,
-        memory=True,
-        backstory=(
-            """
-        Como pesquisador científico, sua missão é explorar e descobrir os mais recentes avanços científicos em seu campo de estudo. Sua paixão pela ciência e sua curiosidade insaciável o impulsionam a buscar constantemente novos conhecimentos e descobertas que possam revolucionar nossa compreensão do mundo. Seu trabalho é crucial para avançar o conhecimento humano e contribuir para o progresso da ciência.
-        """
-        ),
-        llm=llm
-    )
+    tokens_per_minute = get_tokens_per_minute(model_choice)
+    st.sidebar.slider('Tokens por minuto', 100, 5000, value=tokens_per_minute)
 
-    report_writer = Agent(
-        role="Escritor de Relatórios Científicos",
-        goal="escrever um relatório detalhado sobre os avanços científicos em {topic}",
-        verbose=True,
-        memory=True,
-        backstory=(
-            """
-        Como escritor de relatórios científicos, sua habilidade em comunicar descobertas complexas de forma clara e precisa é fundamental. Seu relatório deve fornecer uma visão abrangente dos avanços científicos mais recentes em um campo específico, destacando sua importância e impacto potencial. Sua escrita é essencial para compartilhar descobertas científicas com a comunidade acadêmica e o público em geral.
-        """
-        ),
-        llm=llm
-    )
+    memory = ConversationBufferWindowMemory(k=conversational_memory_length, memory_key="chat_history", return_messages=True)
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
 
-    research_task = Task(
-        description=(
-            """
-        Identifique os próximos grandes avanços em {topic}.
-        Concentre-se em identificar os prós e os contras e na narrativa geral.
-        Seu relatório final deve articular claramente os principais pontos,
-        suas oportunidades de mercado e riscos potenciais.
-        """
-        ),
-        expected_output="Um relatório abrangente de 3 parágrafos sobre os avanços em {topic}",
-        agent=researcher
-    )
+    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice, tokens_per_minute=tokens_per_minute)
 
-    write_task = Task(
-        description=(
-            """
-        Escreva um artigo informativo sobre os avanços em {topic}.
-        Concentre-se nas últimas tendências e em como isso está impactando a indústria.
-        Este artigo deve ser fácil de entender, envolvente e positivo.
-        """
-        ),
-        expected_output="Um artigo de 4 parágrafos sobre os avanços em {topic}, formatado como markdown traduzido em português.",
-        agent=report_writer
-    )
+    # Definir agentes, tarefas e equipe (crew)...
 
-    # Initialize the crew
-    crew = Crew(
-        agents=[researcher, report_writer],
-        tasks=[research_task, write_task],
-        process=Process.sequential
-    )
-
-    topic = st.text_input("Digite o tópico da pesquisa:", "avanços científicos")
-    if st.button("Iniciar Pesquisa"):
-        result = crew.kickoff(inputs={"topic": topic})
-        st.write(result)
-
-        # Add a small delay between requests to avoid rate limit issues
-        time.sleep(1)
+if __name__ == "__main__":
+    main()
