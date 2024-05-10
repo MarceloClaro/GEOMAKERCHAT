@@ -11,3 +11,4 @@ numpy
 crewai
 crewai[tools]
 chromadb
+sqlite3
