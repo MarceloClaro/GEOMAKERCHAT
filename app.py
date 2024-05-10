@@ -35,18 +35,20 @@ def main():
     model_choice = st.sidebar.selectbox("Escolha um modelo", ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"])
     conversational_memory_length = st.sidebar.slider('Tamanho da memória conversacional', 1, 50, value=5)
 
-    tokens_per_minute = st.sidebar.slider('Tokens por minuto', 100, 5000, value=get_tokens_per_minute(model_choice))
-
     memory = ConversationBufferWindowMemory(k=conversational_memory_length, memory_key="chat_history", return_messages=True)
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
 
-    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice, tokens_per_minute=tokens_per_minute)
+    model_kwargs = {
+        "tokens_per_minute": get_tokens_per_minute(model_choice)
+    }
+
+    groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice, model_kwargs=model_kwargs)
 
     user_question = st.text_input("Faça uma pergunta:")
     if user_question:
         prompt = f"{primary_prompt} {user_question} {secondary_prompt}"
-        conversation = ChatGroq(api_key=groq_api_key, model_name=model_choice, tokens_per_minute=tokens_per_minute)
+        conversation = ChatGroq(api_key=groq_api_key, model_name=model_choice, model_kwargs=model_kwargs)
         response = conversation.predict(prompt)
         st.write("Chatbot:", response)
 
