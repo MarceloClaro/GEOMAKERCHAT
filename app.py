@@ -10,31 +10,27 @@ from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
 # Função para upload de dados
-def upload_data():
-    uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv', 'pdf'], accept_multiple_files=True, key="data_upload")
-    if uploaded_files:
-        data_frames = []
-        for file in uploaded_files:
-            try:
-                if file.type == 'application/json':
-                    data = pd.read_json(file)
-                elif file.type in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']:
-                    data = pd.read_excel(file)
-                elif file.type == 'text/csv':
-                    data = pd.read_csv(file)
-                elif file.type == 'application/pdf':
-                    # Inicializa o PDFSearchTool com o arquivo PDF enviado
-                    pdf_search_tool = PDFSearchTool(pdf=file)
-                    # Usa a ferramenta para pesquisar no PDF
-                    data = pdf_search_tool.search("sua consulta aqui")
-                else:
-                    raise ValueError("Tipo de arquivo não suportado")
-                data_frames.append(data)
-                st.write(f"Pré-visualização do arquivo {file.type.split('/')[-1]} carregado:")
-                st.dataframe(data.head())
-            except ValueError as e:
-                st.error(f"Erro ao ler o arquivo {file.name}: {e}")
-        st.session_state['uploaded_data'] = data_frames
+def upload_data(uploaded_files):
+    data_frames = []
+    for file in uploaded_files:
+        try:
+            if file.type == 'application/json':
+                data = pd.read_json(file)
+            elif file.type in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']:
+                data = pd.read_excel(file)
+            elif file.type == 'text/csv':
+                data = pd.read_csv(file)
+            elif file.type == 'application/pdf':
+                pdf_search_tool = PDFSearchTool(pdf=file)
+                data = pdf_search_tool.search("sua consulta aqui")
+            else:
+                raise ValueError("Tipo de arquivo não suportado")
+            data_frames.append(data)
+            st.write(f"Pré-visualização do arquivo {file.type.split('/')[-1]} carregado:")
+            st.dataframe(data.head())
+        except ValueError as e:
+            st.error(f"Erro ao ler o arquivo {file.name}: {e}")
+    return data_frames
 
 # Função principal
 def main():
@@ -57,7 +53,11 @@ def main():
         st.session_state.chat_history = []
 
     groq_chat = ChatGroq(api_key=groq_api_key, model_name=model_choice)
-    upload_data()
+
+    uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv', 'pdf'], accept_multiple_files=True, key="data_upload")
+    if uploaded_files:
+        data_frames = upload_data(uploaded_files)
+        st.session_state['uploaded_data'] = data_frames
 
     user_question = st.text_input("Faça uma pergunta:")
     if user_question:
@@ -70,7 +70,6 @@ def main():
             HumanMessagePromptTemplate.from_template("{human_input}")
         ])
 
-        # Define seus agentes com seus papéis, metas e ferramentas
         researcher = Agent(
             role='Senior Research Analyst',
             goal='Descobrir desenvolvimentos de ponta em IA e ciência de dados',
@@ -88,7 +87,7 @@ def main():
             verbose=True,
             allow_delegation=True,
             tools=[groq_chat],
-            cache=False, # Desativa o cache para este agente
+            cache=False,
             max_rpm=100
         )
 
@@ -102,7 +101,6 @@ def main():
             max_rpm=100
         )
 
-        # Cria tarefas para seus agentes
         task1 = Task(
             description='Conduzir uma análise abrangente dos últimos avanços em IA em 2024. Identificar principais tendências, tecnologias inovadoras e impactos potenciais na indústria. Compilar suas descobertas em um relatório detalhado.',
             expected_output='Um relatório completo sobre os últimos avanços em IA em 2024, sem deixar nada de fora',
@@ -123,20 +121,14 @@ def main():
             human_input=True,
         )
 
-        # Inicializa sua equipe com um processo sequencial
         crew = Crew(
             agents=[researcher, writer, data_scientist],
             tasks=[task1, task2, data_analysis_task],
             verbose=2
         )
 
-        # Faz sua equipe começar a trabalhar!
         result = crew.kickoff()
-
-        # Processa o resultado (se necessário)
-        # ...
-
-        response = result  # Usa o resultado como resposta do chatbot por enquanto
+        response = result
         message = {'human': user_question, 'AI': response}
         st.session_state.chat_history.append(message)
         st.write("Chatbot:", response)
