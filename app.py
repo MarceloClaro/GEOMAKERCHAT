@@ -1,6 +1,8 @@
 import streamlit as st
 import os
 import pandas as pd
+from crewai import Agent, Task, Crew
+from crewai_tools import PDFSearchTool
 from langchain.chains import LLMChain
 from langchain_core.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.messages import SystemMessage
@@ -8,7 +10,7 @@ from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain_groq import ChatGroq
 
 def upload_data():
-    uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv'], accept_multiple_files=True, key="data_upload")
+    uploaded_files = st.file_uploader("Faça upload dos seus arquivos (até 2 arquivos, 200MB cada)", type=['json', 'xlsx', 'csv', 'pdf'], accept_multiple_files=True, key="data_upload")
     if uploaded_files:
         data_frames = []
         for file in uploaded_files:
@@ -19,6 +21,11 @@ def upload_data():
                     data = pd.read_excel(file)
                 elif file.type == 'text/csv':
                     data = pd.read_csv(file)
+                elif file.type == 'application/pdf':
+                    # Initialize PDFSearchTool with the uploaded PDF file
+                    pdf_search_tool = PDFSearchTool(pdf=file)
+                    # Use the tool to search within the PDF
+                    data = pdf_search_tool.search("your_query_here")
                 else:
                     raise ValueError("Tipo de arquivo não suportado")
                 data_frames.append(data)
@@ -60,8 +67,31 @@ def main():
             HumanMessagePromptTemplate.from_template("{human_input}")
         ])
 
-        conversation = LLMChain(llm=groq_chat, prompt=prompt, memory=memory)
-        response = conversation.predict(human_input=user_question)
+        # Define your CrewAI agents with roles, goals, and tools
+        agent = Agent(
+            role='Chatbot',
+            goal='Respond to user inquiries',
+            backstory='I am an advanced chatbot trained to provide information on various topics.',
+            verbose=True,
+            allow_delegation=False,
+            tools=[groq_chat],
+            max_rpm=100
+        )
+
+        task = Task(
+            description='Answer user inquiries',
+            expected_output='A response to the user inquiry',
+            agent=agent,
+            human_input=True,
+        )
+
+        crew = Crew(
+            agents=[agent],
+            tasks=[task],
+            verbose=2
+        )
+
+        response = crew.kickoff(human_input=user_question)
         message = {'human': user_question, 'AI': response}
         st.session_state.chat_history.append(message)
         st.write("Chatbot:", response)
