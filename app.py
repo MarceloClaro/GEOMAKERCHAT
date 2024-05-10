@@ -162,5 +162,8 @@ def main():
                     st.warning(f"Limite de taxa excedido. Aguardando {retry_time_seconds} segundos antes de tentar novamente...")
                     time.sleep(retry_time_seconds)
 
+    # Exibir a contagem de tokens na barra lateral
+    st.sidebar.write(f"Tokens usados ({model}): {tokens_used[model]} de {rate_limits[model]}")
+
 if __name__ == "__main__":
     main()
