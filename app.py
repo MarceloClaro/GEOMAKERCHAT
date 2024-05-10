@@ -4,6 +4,7 @@ from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+import groq
 
 import toml
 import time
