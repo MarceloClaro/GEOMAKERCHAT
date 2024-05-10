@@ -4,7 +4,7 @@ import streamlit as st
 from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
 from langchain_community.tools import DuckDuckGoSearchRun
-import groq  # Adicione esta linha
+import groq
 import toml
 import time
 
@@ -137,8 +137,11 @@ def main():
                 st.write("Chatbot:", result)
                 break
             except groq.RateLimitError as e:
-                st.warning(f"Rate limit exceeded. Waiting for {e.retry_after} seconds before trying again...")
-                time.sleep(e.retry_after)
+                # Extrair o tempo de espera da mensagem de erro
+                retry_time_str = e.args[0]["error"]["message"].split("Please try again in ")[1].split(".")[0]
+                retry_time_seconds = int(retry_time_str.split("m")[0]) * 60 + float(retry_time_str.split("m")[1][:-1])
+                st.warning(f"Limite de taxa excedido. Aguardando {retry_time_seconds} segundos antes de tentar novamente...")
+                time.sleep(retry_time_seconds)
 
 if __name__ == "__main__":
     main()
