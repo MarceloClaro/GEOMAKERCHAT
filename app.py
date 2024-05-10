@@ -72,7 +72,12 @@ def main():
         ),
         tools=[search_tool],
         allow_delegation=True,
-        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice)
+        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice),
+        max_iter=10,  # Limite de iterações
+        max_rpm=None,  # Limite de solicitações por minuto
+        function_calling_llm=None,  # Chamada de função do LLM
+        step_callback=None,  # Callback de passo
+        cache=True  # Cache habilitado
     )
 
     blog_writer = Agent(
@@ -85,7 +90,12 @@ def main():
         ),
         tools=[search_tool],
         allow_delegation=False,
-        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice)
+        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice),
+        max_iter=10,  # Limite de iterações
+        max_rpm=None,  # Limite de solicitações por minuto
+        function_calling_llm=None,  # Chamada de função do LLM
+        step_callback=None,  # Callback de passo
+        cache=True  # Cache habilitado
     )
 
     article_evaluator = Agent(
@@ -98,71 +108,38 @@ def main():
         ),
         tools=[search_tool],
         allow_delegation=False,
-        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice)
+        llm=ChatGroq(api_key=groq_api_key, model_name=model_choice),
+        max_iter=10,  # Limite de iterações
+        max_rpm=None,  # Limite de solicitações por minuto
+        function_calling_llm=None,  # Chamada de função do LLM
+        step_callback=None,  # Callback de passo
+        cache=True  # Cache habilitado
     )
 
-    research_task = Task(
-        description=(
-            "在符合科学规范和ABNT格式的前提下，搜索和整理有关{topic}的相关和最新信息。确保包含适当的参考文献。"
-        ),
-        expected_output="一份详细和结构良好的关于{topic}的摘要，遵循科学规范和ABNT规范。",
-        tools=[search_tool],
-        agent=academic_researcher
-    )
+    # Exibir a contagem de tokens na barra lateral
+    st.sidebar.write(f"Tokens usados ({model_choice}): {tokens_used[model_choice]} de {rate_limits[model_choice]}")
 
-    write_task = Task(
-        description=(
-            "撰写有关{topic}的引人入胜的内容，着重介绍最新趋势及其对行业的影响。这篇文章应易于理解、引人入胜且积极向上。"
-        ),
-        expected_output="一篇关于{topic}进展的四段文章，采用markdown格式。",
-        tools=[search_tool],
-        agent=blog_writer,
-        async_execution=False,
-        output_file="blog-post.md"
-    )
+    # Obter a mensagem do usuário
+    user_input = st.text_input("Você:", value="")
 
-    evaluate_task = Task(
-        description=(
-            "对{topic}的学术文章进行批判性评价。突出文章的优点和可能存在的缺陷。"
-        ),
-        expected_output="一份对{topic}的学术文章进行批判性评价，突出文章的优点和可能存在的缺陷。",
-        tools=[search_tool],
-        agent=article_evaluator
-    )
+    if st.button("Enviar"):
+        # Executar a interação com o agente
+        try:
+            response = academic_researcher.interact(user_input)
+            st.write("Pesquisador Acadêmico:", response)
+        except Exception as e:
+            retry_time_str = None
+            if isinstance(e.args[0], dict) and "error" in e.args[0]:
+                retry_time_str = e.args[0]["error"]
 
-    crew = Crew(
-        agents=[academic_researcher, blog_writer, article_evaluator],
-        tasks=[research_task, write_task, evaluate_task],
-        process=Process.sequential
-    )
-
-    user_question = st.text_input("Faça uma pergunta:")
-    if user_question:
-        current_prompt = secondary_prompt if 'last_prompt' in st.session_state and st.session_state.last_prompt == primary_prompt else primary_prompt
-        st.session_state.last_prompt = current_prompt
-
-        prompt = f"{current_prompt} {user_question}"
-        model = crew.agents[0].llm.model_name  # Assume que o modelo do primeiro agente é o modelo escolhido
-        while True:
-            # Verificar se excedeu o limite de tokens
-            if tokens_used[model] >= rate_limits[model]:
-                st.warning(f"Limite de tokens excedido para o modelo {model}. Aguardando antes de tentar novamente...")
-                time.sleep(60)
-                tokens_used[model] = 0
+            if retry_time_str is not None:
+                st.warning(f"Você atingiu o limite de taxa para o modelo {model_choice}. Tente novamente em {retry_time_str}")
             else:
-                try:
-                    result = crew.kickoff(inputs={"topic": user_question})
-                    st.write("Chatbot:", result)
-                    tokens_used[model] += 1  # Incrementar o contador de tokens
-                    break
-                except groq.RateLimitError as e:
-                    retry_time_str = None
-                    if isinstance(e.args[0], dict) and "error" in e.args[0]:
-                        retry_time_str = e.args[0]["error"]
-                    else:
-                        retry_time_str = "Tempo de espera desconhecido"
-                    st.warning(f"Limite de taxa excedido. Aguardando {retry_time_str} segundos antes de tentar novamente...")
-                    time.sleep(retry_time_str)
+                st.error("Ocorreu um erro ao interagir com o agente. Por favor, tente novamente.")
+
+    st.write("Exemplo de conversa:")
+    for message in st.session_state.chat_history:
+        st.write(message["agent"], ":", message["text"])
 
 if __name__ == "__main__":
     main()
