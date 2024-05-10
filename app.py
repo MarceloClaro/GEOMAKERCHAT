@@ -1,6 +1,7 @@
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
 from langchain_groq import ChatGroq
+import toml
 import time  # Para adicionar um pequeno atraso entre as solicitações
 
 # Carregar a chave de API do Groq do arquivo secrets.toml
