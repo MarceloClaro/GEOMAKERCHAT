@@ -1,4 +1,3 @@
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 import os
 import streamlit as st
 from crewai import Agent, Task, Crew, Process
@@ -8,12 +7,23 @@ import groq
 import toml
 import time
 
-
 # Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
 
+# Definir os limites de taxa para cada modelo
+rate_limits = {
+    "llama3-70b-8192": 6000,
+    "llama3-8b-8192": 30000,
+    "gemma-7b-it": 15000,
+    "mixtral-8x7b-32768": 5000
+}
+
+# Inicializar um dicionário para rastrear os tokens usados por cada modelo
+tokens_used = {model: 0 for model in rate_limits}
+
 def main():
+    # Configurações da página do Streamlit
     st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG+CreWAI")
     st.image("Untitled.png", width=100)
     st.title("Bem-vindo ao Chat Geomaker Avançado com RAG+CreWAI!")
@@ -40,7 +50,7 @@ def main():
     
     """)
 
-    st.sidebar.title('Customização')
+    # Sidebar para customização
     primary_prompt = st.sidebar.text_input("Prompt do sistema principal", "Como posso ajudar você hoje?")
     secondary_prompt = st.sidebar.text_input("Prompt do sistema secundário", "Há algo mais em que posso ajudar?")
     model_choice = st.sidebar.selectbox("Escolha um modelo", ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768", "gemma-7b-it"])
@@ -83,7 +93,7 @@ def main():
         verbose=True,
         memory=True,
         backstory=(
-            "作为文章评估者，您具有敏锐的分析能力和对学术研究过程的深刻理解。您的批判性分析不仅突出了文章的优点，还指出了文章可能存在的缺陷，为持续改进学术研究质量做出了贡献。"
+            "作为文章评估者，您具有敏锐的分析能力和对学术研究过程的深刻理解。您的批判性分析突出了文章的优点，也指出了文章可能存在的缺陷，为学术研究质量的持续改进做出了贡献。"
         ),
         tools=[search_tool],
         allow_delegation=False,
@@ -131,17 +141,25 @@ def main():
         st.session_state.last_prompt = current_prompt
 
         prompt = f"{current_prompt} {user_question}"
+        model = crew.agents[0].llm.model_name  # Assume que o modelo do primeiro agente é o modelo escolhido
         while True:
-            try:
-                result = crew.kickoff(inputs={"topic": user_question})
-                st.write("Chatbot:", result)
-                break
-            except groq.RateLimitError as e:
-                # Extrair o tempo de espera da mensagem de erro
-                retry_time_str = e.args[0]["error"]["message"].split("Please try again in ")[1].split(".")[0]
-                retry_time_seconds = int(retry_time_str.split("m")[0]) * 60 + float(retry_time_str.split("m")[1][:-1])
-                st.warning(f"Limite de taxa excedido. Aguardando {retry_time_seconds} segundos antes de tentar novamente...")
-                time.sleep(retry_time_seconds)
+            # Verificar se excedeu o limite de tokens
+            if tokens_used[model] >= rate_limits[model]:
+                st.warning(f"Limite de tokens excedido para o modelo {model}. Aguardando antes de tentar novamente...")
+                time.sleep(60)
+                tokens_used[model] = 0
+            else:
+                try:
+                    result = crew.kickoff(inputs={"topic": user_question})
+                    st.write("Chatbot:", result)
+                    tokens_used[model] += 1  # Incrementar o contador de tokens
+                    break
+                except groq.RateLimitError as e:
+                    # Extrair o tempo de espera da mensagem de erro
+                    retry_time_str = e.args[0]["error"]["message"].split("Please try again in ")[1].split(".")[0]
+                    retry_time_seconds = int(retry_time_str.split("m")[0]) * 60 + float(retry_time_str.split("m")[1][:-1])
+                    st.warning(f"Limite de taxa excedido. Aguardando {retry_time_seconds} segundos antes de tentar novamente...")
+                    time.sleep(retry_time_seconds)
 
 if __name__ == "__main__":
     main()
