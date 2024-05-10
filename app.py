@@ -14,7 +14,7 @@ secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
 
 def main():
-    st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG +CreWai")
+    st.set_page_config(page_icon="💬", layout="wide", page_title="Interface de Chat Avançado com RAG+CreWAI")
     st.image("Untitled.png", width=100)
     st.title("Bem-vindo ao Chat Geomaker Avançado com RAG!")
     st.write("Este chatbot utiliza um modelo avançado que combina geração de linguagem com recuperação de informações.")
