@@ -6,7 +6,7 @@ from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 
 import toml
-import time  # Para adicionar um pequeno atraso entre as solicitações
+import time
 
 # Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
@@ -87,8 +87,14 @@ def main():
         st.session_state.last_prompt = current_prompt
 
         prompt = f"{current_prompt} {user_question}"
-        result = crew.kickoff(inputs={"topic": user_question})
-        st.write("Chatbot:", result)
+        while True:
+            try:
+                result = crew.kickoff(inputs={"topic": user_question})
+                st.write("Chatbot:", result)
+                break
+            except groq.RateLimitError as e:
+                st.warning(f"Rate limit exceeded. Waiting for {e.wait_time} seconds before trying again...")
+                time.sleep(e.wait_time)
 
 if __name__ == "__main__":
     main()
