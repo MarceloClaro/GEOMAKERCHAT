@@ -59,7 +59,7 @@ def main():
         backstory=(
             "Como pesquisador acadêmico, seu objetivo é contribuir para o avanço do conhecimento científico em sua área. Você segue rigorosamente as normas e metodologias científicas e da ABNT para garantir a qualidade e confiabilidade de suas pesquisas. Sua busca por informações é guiada pela busca da verdade e pela contribuição para a comunidade acadêmica."
         ),
-        tools=[search_tool, "PubMed", "arXiv", "ResearchGate", "https://www.sci-hub.se/", "https://www.ablesci.com/so", "Google Scholar", "SciELO"],
+        tools=[search_tool],
         allow_delegation=True,
         llm=ChatGroq(api_key=groq_api_key, model_name=model_choice)
     )
@@ -70,7 +70,7 @@ def main():
         verbose=True,
         memory=True,
         backstory=(
-            "Armed with the knack for distilling complex subjects into digestible, compelling stories, you, as a blog writer, masterfully weave narratives that both enlighten and engage your audience. Your writing illuminates fresh insights and discoveries, making them approachable for everyone. Through your craft, you bring to the forefront the essence of new developments across various topics, making the intricate world of news a fascinating journey for your readers."
+            "Como escritor de artigos, sua habilidade em transformar assuntos complexos em narrativas envolventes é excepcional. Sua escrita ilumina novas perspectivas e descobertas, tornando-as acessíveis para todos. Através do seu trabalho, você destaca os aspectos mais importantes das últimas tendências em diversos temas, tornando o mundo intricado das notícias uma jornada fascinante para seus leitores."
         ),
         tools=[search_tool],
         allow_delegation=False,
