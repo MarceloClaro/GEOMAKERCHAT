@@ -7,7 +7,6 @@ from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 
 import toml
 import time  # Para adicionar um pequeno atraso entre as solicitações
-
 # Carregar a chave de API do Groq do arquivo secrets.toml
 secrets = toml.load("secrets.toml")
 groq_api_key = secrets["GROQ_API_KEY"]
