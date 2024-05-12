@@ -23,18 +23,20 @@ entrada = st.text_input("Pesquise vídeos do YouTube:")
 if st.button("Pesquisar"):
     # Create research agent and task
     research_agent = Agent(
+        name="research_agent",
         role='Pesquisador de Vídeos do YouTube',
         goal='Encontrar os 10 vídeos mais relevantes sobre ' + entrada,
         backstory="""Você é um pesquisador de vídeo experiente.
             Você é responsável por encontrar os vídeos mais relevantes no YouTube.""",
-        verbose=True
+        verbose=True,
+        tool=SerperDevTool(),
+        tool=YoutubeVideoSearchTool()
     )
 
     research_task = Task(
         description='Encontre os 10 vídeos mais relevantes no YouTube sobre ' + entrada,
         expected_output='Uma lista com os 10 vídeos no seguinte modelo: Título, contagem de visualizações, link do vídeo',
-        agent=research_agent,
-        tools=[SerperDevTool(), YoutubeVideoSearchTool()],
+        agent="research_agent",
     )
 
     # Create crew and execute task
@@ -45,16 +47,3 @@ if st.button("Pesquisar"):
     st.write("Top 10 vídeos mais relevantes do YouTube:")
     for video in result:
         st.write(f"**{video['title']}** - {video['view_count']} views - [Assistir no YouTube]({video['link']})")
-
-    # Adicionando informações adicionais
-    st.image("eu.ico", width=100)
-    st.write("""
-    Projeto Geomaker + IA 
-    - Professor: Marcelo Claro.
-    Contatos: marceloclaro@gmail.com
-    Whatsapp: (88)981587145
-    Instagram: https://www.instagram.com/marceloclaro.geomaker/
-    """)    
-
-if __name__ == "__main__":
-    main()
