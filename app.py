@@ -9,7 +9,7 @@ load_dotenv()
 
 # Set API keys
 os.environ["SERPER_API_KEY"] = "4fe66ce9a539c645b83c11188f3410f2e82d8c18"
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"  # Substitua "sua_chave_api_groq_aqui" pela sua chave GROQ
 
 # Create Langchain Groq API object
 groq_api_key = GROQ_API_KEY
