@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from crewai import Agent, Task, Crew
 from crewai_tools import SerperDevTool, YoutubeVideoSearchTool
@@ -44,3 +45,16 @@ if st.button("Pesquisar"):
     st.write("Top 10 vídeos mais relevantes do YouTube:")
     for video in result:
         st.write(f"**{video['title']}** - {video['view_count']} views - [Assistir no YouTube]({video['link']})")
+
+    # Adicionando informações adicionais
+    st.image("eu.ico", width=100)
+    st.write("""
+    Projeto Geomaker + IA 
+    - Professor: Marcelo Claro.
+    Contatos: marceloclaro@gmail.com
+    Whatsapp: (88)981587145
+    Instagram: https://www.instagram.com/marceloclaro.geomaker/
+    """)    
+
+if __name__ == "__main__":
+    main()
