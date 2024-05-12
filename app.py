@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 # Set API keys
 os.environ["SERPER_API_KEY"] = "4fe66ce9a539c645b83c11188f3410f2e82d8c18"
 GROQ_API_KEY = "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"
@@ -30,8 +29,7 @@ if st.button("Pesquisar"):
         backstory="""Você é um pesquisador de vídeo experiente.
             Você é responsável por encontrar os vídeos mais relevantes no YouTube.""",
         verbose=True,
-        tool=SerperDevTool(),
-        tool=YoutubeVideoSearchTool()
+        tools=[SerperDevTool(), YoutubeVideoSearchTool()]
     )
 
     research_task = Task(
